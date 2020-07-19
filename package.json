@@ -1,0 +1,18 @@
+{
+  "name": "daogarden-smartweave",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "npm run clean && npm run build-ts && npm run cp",
+    "build-ts": "node build.js",
+    "clean": "rimraf ./dist",
+    "cp": "copyfiles -u 1 ./src/**/*.json dist"
+  },
+  "dependencies": {
+    "copyfiles": "^2.3.0",
+    "esbuild": "^0.6.4",
+    "glob": "^7.1.6",
+    "rimraf": "^3.0.2"
+  }
+}
