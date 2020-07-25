@@ -1,4 +1,4 @@
-import { StateInterface, ActionInterface, VoteInterface, BalancesInterface, InputInterface, LockedBalanceInterface } from "./faces";
+import { StateInterface, ActionInterface, VoteInterface, BalancesInterface, InputInterface, LockedBalanceInterface, LockedParamsInterface } from "./faces";
 
 declare const ContractError: any;
 declare const SmartWeave: any;
@@ -68,7 +68,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
   /** Lock Function */
   if(input.function === 'lock') {
     const qty = input.qty;
-    const period = input.period;
+    const period = input.lockedLength;
 
     if(!Number.isInteger(qty) || qty <= 0) {
       throw new ContractError('Quantity must be a positive integer.');
@@ -99,12 +99,42 @@ export function handle(state: StateInterface, action: ActionInterface) {
         start: SmartWeave.block.height
       }];
     }
+
+    return { state };
   }
 
   /** Unlock Function */
   if(input.function === 'unlock') {
     // After the time has passed for locked tokens, unlock them calling this function.
+    if(caller in lockedBalances) {
+      let i = lockedBalances[caller].length;
+      while(i--) {
+        const locked = lockedBalances[caller][i];
+        if((locked.start + locked.period) >= SmartWeave.block.height) {
+          // Unlock
+          balances[caller] += locked.balance;
+          lockedBalances[caller].splice(i, 1);
+        }
+      }
+    }
 
+    return { state };
+  }
+
+  /** LockedBalance Function */
+  if(input.function === 'lockedBalance') {
+    let balance = 0;
+    if(caller in lockedBalances) {
+      const filtered = lockedBalances[caller].filter(a => {
+        return ((a.start + a.period) < SmartWeave.block.height);
+      });
+
+      for(let i = 0, j = filtered.length; i < j; i++) {
+        balance += filtered[i].balance;
+      }
+    }
+
+    return { result: { caller, balance} };
   }
 
   /** Propose Function */
@@ -135,7 +165,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
       start: SmartWeave.block.height
     };
 
-    if (voteType === 'mint') {
+    if (voteType === 'mint' || voteType === 'mintLocked') {
       const recipient = input.recipient;
       const qty = input.qty;
 
@@ -146,13 +176,20 @@ export function handle(state: StateInterface, action: ActionInterface) {
       if (!Number.isInteger(qty) || qty <= 0) {
         throw new ContractError('Invalid value for "qty". Must be a positive integer.');
       }
+
+      let lockedLength = {};
+      if(input.lockedLength) {
+        if(!Number.isInteger(input.lockedLength)) {
+          throw new ContractError('Invalid value for "lockedLength". Must be a positive integer.');
+        }
+
+        lockedLength = { lockedLength: input.lockedLength };
+      }
       
       vote = {... vote, ...{
-        status: "active",
-        type: 'mint',
         recipient,
         qty: qty,
-      }};
+      }, ...lockedLength };
 
       votes.push(vote);
     }
@@ -191,7 +228,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
     const vote = votes[id];
     
     let voterBalance = balances[caller] || 0;
-    if(lockedBalances[caller]) {
+    if(caller in lockedBalances) {
       for(let i = 0, j = lockedBalances[caller].length; i < j; i++) {
         const locked = lockedBalances[caller][i];
         if((locked.start + locked.period) < SmartWeave.block.height) {
@@ -225,7 +262,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
   }
 
   /** Finalize Function */
-  if (input.function === "finalize") {
+  if (input.function === 'finalize') {
     const id: string = input.id;
     const vote: VoteInterface = votes[id];
     const qty: number = vote.qty;
@@ -257,6 +294,20 @@ export function handle(state: StateInterface, action: ActionInterface) {
           balances[vote.recipient] = qty;
         }
 
+      } else if(vote.type === 'mintLocked') {
+        const locked: LockedParamsInterface = {
+          balance: qty,
+          start: SmartWeave.block.height,
+          period: vote.lockedLength
+        };
+
+        if(vote.recipient in lockedBalances) {
+          // Existing account
+          lockedBalances[vote.recipient].push(locked);
+        } else {
+          // New locked account
+          lockedBalances[vote.recipient] = [locked];
+        }
       } else if (vote.type === 'set') {
         state[vote.key] = vote.value;
       }
@@ -265,7 +316,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
       vote.status = 'failed';
     }
 
-    return state;
+    return { state };
   }
 
   throw new ContractError(`No function supplied or function not recognised: "${input.function}"`);

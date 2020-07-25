@@ -13,11 +13,13 @@ export interface BalancesInterface {
 }
 
 export interface LockedBalanceInterface {
-  [key: string]: {
-    balance: number;
-    period: number;
-    start: number;
-  }[];
+  [key: string]: LockedParamsInterface[];
+}
+
+export interface LockedParamsInterface {
+  balance: number;
+  period: number;
+  start: number;
 }
 
 export interface ActionInterface {
@@ -30,12 +32,11 @@ export interface InputInterface extends VoteInterface {
   target: string;
   id: string;
   cast: string;
-  period: number;
 }
 
 export interface VoteInterface {
   status: 'active' | 'quorumFailed' | 'passed' | 'failed';
-  type: 'mint' | 'indicative' | 'set';
+  type: 'mint' | 'mintLocked' | 'indicative' | 'set';
   recipient?: string;
   qty?: number;
   key?: string;
@@ -45,4 +46,5 @@ export interface VoteInterface {
   nays: number;
   voted: string[];
   start: number;
+  lockedLength?: number;
 }
