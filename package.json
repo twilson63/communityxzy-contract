@@ -8,7 +8,7 @@
     "build-ts": "node build.js",
     "clean": "rimraf ./dist",
     "cp": "copyfiles -u 1 ./src/**/*.json dist",
-    "test": "jest --coverage"
+    "test": "jest"
   },
   "jest": {
     "preset": "ts-jest",
