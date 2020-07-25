@@ -54,7 +54,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
 
   /** Balance Function */
   if (input.function === 'balance') {
-    const target = input.target;
+    const target = input.target || caller;
     
     if (typeof target !== 'string') {
       throw new ContractError('Must specificy target to get balance for.');
@@ -72,14 +72,14 @@ export function handle(state: StateInterface, action: ActionInterface) {
   /** Lock Function */
   if(input.function === 'lock') {
     const qty = input.qty;
-    const period = input.lockLength;
+    const lockLength = input.lockLength;
 
     if(!Number.isInteger(qty) || qty <= 0) {
       throw new ContractError('Quantity must be a positive integer.');
     }
 
-    if(!Number.isInteger(period) || period <= 0 || period > state.lockedMaxLength) {
-      throw new ContractError(`lockLength is out of range. Max lockLength is ${state.lockedMaxLength}`);
+    if(!Number.isInteger(lockLength) || lockLength < state.lockMinLength || lockLength > state.lockMaxLength) {
+      throw new ContractError(`lockLength is out of range. lockLength must be between ${state.lockMinLength} - ${state.lockMaxLength}.`);
     }
 
     const balance = balances[caller];
@@ -92,14 +92,14 @@ export function handle(state: StateInterface, action: ActionInterface) {
       // Wallet already exists in state, add new tokens
       lockedBalances[caller].push({
         balance: qty,
-        period,
+        lockLength,
         start: SmartWeave.block.height
       });
     } else {
       // Wallet is new, set starting balance
       lockedBalances[caller] = [{
         balance: qty,
-        period,
+        lockLength,
         start: SmartWeave.block.height
       }];
     }
@@ -114,7 +114,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
       let i = lockedBalances[caller].length;
       while(i--) {
         const locked = lockedBalances[caller][i];
-        if((locked.start + locked.period) >= SmartWeave.block.height) {
+        if(SmartWeave.block.height >= (locked.start + locked.lockLength)) {
           // Unlock
           balances[caller] += locked.balance;
           lockedBalances[caller].splice(i, 1);
@@ -127,10 +127,12 @@ export function handle(state: StateInterface, action: ActionInterface) {
 
   /** LockedBalance Function */
   if(input.function === 'lockedBalance') {
+    const target = input.target || caller;
     let balance = 0;
-    if(caller in lockedBalances) {
-      const filtered = lockedBalances[caller].filter(a => {
-        return ((a.start + a.period) < SmartWeave.block.height);
+
+    if(target in lockedBalances) {
+      const filtered = lockedBalances[target].filter(a => {
+        return (SmartWeave.block.height < (a.start + a.lockLength));
       });
 
       for(let i = 0, j = filtered.length; i < j; i++) {
@@ -138,7 +140,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
       }
     }
 
-    return { result: { caller, balance} };
+    return { result: { target, balance} };
   }
 
   /** Propose Function */
@@ -150,13 +152,13 @@ export function handle(state: StateInterface, action: ActionInterface) {
       throw new ContractError('Note format not recognized.');
     }
 
-    let hasBalance = (Number.isInteger(balances[caller]) && balances[caller] > 0);
-    if(!hasBalance) {
-      hasBalance = (lockedBalances[caller] && !!lockedBalances[caller].filter(a => a.balance > 0).length);
+    if(!(caller in lockedBalances)) {
+      throw new ContractError('caller need to have locked balances.');
     }
-
+    
+    const hasBalance = (lockedBalances[caller] && !!lockedBalances[caller].filter(a => a.balance > 0).length);
     if(!hasBalance) {
-      throw new ContractError('Only PST holders can propose a vote.');
+      throw new ContractError('Caller doesn\'t have any locked balance.');
     }
 
     let vote: VoteInterface = {
@@ -181,19 +183,19 @@ export function handle(state: StateInterface, action: ActionInterface) {
         throw new ContractError('Invalid value for "qty". Must be a positive integer.');
       }
 
-      let lockedLength = {};
-      if(input.lockedLength) {
-        if(!Number.isInteger(input.lockedLength)) {
+      let lockLength = {};
+      if(input.lockLength) {
+        if(!Number.isInteger(input.lockLength)) {
           throw new ContractError('Invalid value for "lockedLength". Must be a positive integer.');
         }
 
-        lockedLength = { lockedLength: input.lockedLength };
+        lockLength = { lockLength: input.lockLength };
       }
       
       vote = {... vote, ...{
         recipient,
         qty: qty,
-      }, ...lockedLength };
+      }, ...lockLength };
 
       votes.push(vote);
     }
@@ -235,8 +237,8 @@ export function handle(state: StateInterface, action: ActionInterface) {
     if(caller in lockedBalances) {
       for(let i = 0, j = lockedBalances[caller].length; i < j; i++) {
         const locked = lockedBalances[caller][i];
-        if((locked.start + locked.period) < SmartWeave.block.height) {
-          voterBalance += (locked.balance * locked.period);
+        if((locked.start + locked.lockLength) < SmartWeave.block.height) {
+          voterBalance += (locked.balance * locked.lockLength);
         }
       }
     }
@@ -302,7 +304,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
         const locked: LockedParamsInterface = {
           balance: qty,
           start: SmartWeave.block.height,
-          period: vote.lockedLength
+          lockLength: vote.lockedLength
         };
 
         if(vote.recipient in lockedBalances) {

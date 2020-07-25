@@ -12,7 +12,7 @@ const arweave = Arweave.init({
 const pstFile = path.resolve(__dirname, '../../dist/pstdao.js');
 let state = JSON.parse(fs.readFileSync('./src/pstdao.json', 'utf8'));
 
-let { handler, swGlobal } = createContractExecutionEnvironment(arweave, fs.readFileSync(pstFile, 'utf8'), '');
+let { handler, swGlobal } = createContractExecutionEnvironment(arweave, fs.readFileSync(pstFile, 'utf8'), 'bYz5YKzHH97983nS8UWtqjrlhBHekyy-kvHt_eBxBBY');
 
 const addresses = {
   admin: 'uhE-QeYS8i4pmUtnxQyHD7dzXFNaJ9oMK-IM-QPNY6M',
@@ -138,16 +138,103 @@ describe('Get account balances', () => {
   });
 });
 
-// TODO: These ones don't work because of SmartWeave block height
+// Had to update SmartWeave to have a custom nonce for these tests.
 describe('Locking system', () => {
   let bal = 100;
-  it(`should lock ${100} from ${addresses.admin}`, () => {
+  it(`should not lock ${bal} from ${addresses.admin}`, () => {
+    try {
+      handler(state, {input: {
+        function: 'lock',
+        qty: bal,
+        lockLength: 1
+      }, caller: addresses.admin});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+
+    expect(state.lockedBalances[addresses.admin].length).toBe(1);
+  });
+
+  it(`should lock ${bal} from ${addresses.admin}`, () => {
+    const prevBal = state.balances[addresses.admin];
     handler(state, {input: {
       function: 'lock',
       qty: bal,
-      lockLength: 1
+      lockLength: 5
     }, caller: addresses.admin});
 
-    console.log(state);
+    expect(state.lockedBalances[addresses.admin].length).toBe(2);
+    expect(state.lockedBalances[addresses.admin][1]).toEqual({
+      balance: bal,
+      lockLength: 5,
+      start: 0
+    });
+    expect(state.balances[addresses.admin]).toBe((prevBal - bal));
+  });
+
+  it('should not allow unlock', () => {
+    handler(state, {input: {function: 'unlock'}, caller: addresses.admin});
+    expect(state.lockedBalances[addresses.admin].length).toBe(2);
+  });
+
+  it('should not allow unlock', () => {
+    swGlobal.block.increment();
+    try {
+      handler(state, {input: {function: 'unlock'}, caller: addresses.admin});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+    expect(state.lockedBalances[addresses.admin].length).toBe(2);
+  });
+
+  it('should allow unlock', () => {
+    const prevBal = state.balances[addresses.admin];
+
+    for(let i = 0; i < 4; i++) {
+      swGlobal.block.increment();
+    }
+    handler(state, {input: {function: 'unlock'}, caller: addresses.admin});
+    expect(state.lockedBalances[addresses.admin].length).toBe(1);
+    expect(state.balances[addresses.admin]).toBe((prevBal + bal));
+  });
+
+  it('should allow a lock without giving a target', () => {
+    handler(state, {input: {
+      function: 'lock',
+      qty: bal,
+      lockLength: 5
+    }, caller: addresses.admin});
+  });
+
+  it('should not allow unlock', () => {
+    handler(state, {input: {function: 'unlock'}, caller: addresses.admin});
+    expect(state.lockedBalances[addresses.admin].length).toBe(2);
+  });
+
+  it('should allow 1 unlock', () => {
+    for(let i = 0; i < 5; i++) {
+      swGlobal.block.increment();
+    }
+    handler(state, {input: {function: 'unlock'}, caller: addresses.admin});
+    expect(state.lockedBalances[addresses.admin].length).toBe(1);
+  });
+
+  it('should return the account balances', async () => {
+    const resultObj = {
+      target: addresses.admin,
+      balance: 1000
+    };
+
+    const res1 = await handler(state, {input: {function: 'lockedBalance'}, caller: addresses.admin});
+    const res2 = await handler(state, {input: {function: 'lockedBalance', target: addresses.user}, caller: addresses.admin});
+    expect(res1.result).toEqual({
+      target: addresses.admin,
+      balance: 1000
+    });
+
+    expect(res2.result).toEqual({
+      target: addresses.user,
+      balance: 0
+    });
   });
 });

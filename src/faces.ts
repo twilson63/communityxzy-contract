@@ -5,7 +5,8 @@ export interface StateInterface {
   votes: VoteInterface[];
   quorum: number;
   voteLength: number;
-  lockedMaxLength: number;
+  lockMinLength: number;
+  lockMaxLength: number;
 }
 
 export interface BalancesInterface {
@@ -18,7 +19,7 @@ export interface LockedBalanceInterface {
 
 export interface LockedParamsInterface {
   balance: number;
-  period: number;
+  lockLength: number;
   start: number;
 }
 
@@ -32,7 +33,6 @@ export interface InputInterface extends VoteInterface {
   target?: string;
   id?: string;
   cast?: string;
-  lockLength?: number;
 }
 
 export interface VoteInterface {
@@ -47,5 +47,5 @@ export interface VoteInterface {
   nays?: number;
   voted?: string[];
   start?: number;
-  lockedLength?: number;
+  lockLength?: number;
 }

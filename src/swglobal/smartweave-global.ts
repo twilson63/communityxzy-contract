@@ -109,13 +109,15 @@ class Transaction {
 }
 
 class Block {
+  // Custom nonce to work offline
+  private nonce = 0;
 
   constructor(private global: SmartWeaveGlobal) {
   }
 
   get height() {
     if (!this.global._activeTx) {
-      throw new Error('No current Tx');
+      return this.nonce;
     }
     return this.global._activeTx.info.confirmed!.block_height
   }
@@ -124,6 +126,10 @@ class Block {
       throw new Error('No current Tx');
     }
     return this.global._activeTx.info.confirmed!.block_indep_hash 
+  }
+
+  increment() {
+    this.nonce++;
   }
 }
 
