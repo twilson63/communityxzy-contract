@@ -128,8 +128,8 @@ class Block {
     return this.global._activeTx.info.confirmed!.block_indep_hash 
   }
 
-  increment() {
-    this.nonce++;
+  increment(nonce = 1) {
+    this.nonce += nonce;
   }
 }
 

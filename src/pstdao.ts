@@ -131,8 +131,9 @@ export function handle(state: StateInterface, action: ActionInterface) {
     let balance = 0;
 
     if(target in lockedBalances) {
+      const blockHeight = SmartWeave.block.height;
       const filtered = lockedBalances[target].filter(a => {
-        return (SmartWeave.block.height < (a.start + a.lockLength));
+        return (blockHeight < (a.start + a.lockLength));
       });
 
       for(let i = 0, j = filtered.length; i < j; i++) {
@@ -192,10 +193,10 @@ export function handle(state: StateInterface, action: ActionInterface) {
         lockLength = { lockLength: input.lockLength };
       }
       
-      vote = {... vote, ...{
+      Object.assign(vote, {
         recipient,
         qty: qty,
-      }, ...lockLength };
+      }, lockLength);
 
       votes.push(vote);
     } else if (voteType === 'set') {
@@ -205,10 +206,10 @@ export function handle(state: StateInterface, action: ActionInterface) {
 
       // TODO: Add validators
 
-      vote = {...vote, ...{
+      Object.assign(vote, {
         'key': input.key,
         'value': input.value
-      }};
+      });
       
       votes.push(vote);
     } else if (voteType === 'indicative') {
@@ -231,25 +232,25 @@ export function handle(state: StateInterface, action: ActionInterface) {
 
     const vote = votes[id];
     
-    let voterBalance = balances[caller] || 0;
+    let voterBalance = 0;
     if(caller in lockedBalances) {
       for(let i = 0, j = lockedBalances[caller].length; i < j; i++) {
         const locked = lockedBalances[caller][i];
-        if((locked.start + locked.lockLength) < SmartWeave.block.height) {
+
+        if(SmartWeave.block.height < (locked.start + locked.lockLength)) {
           voterBalance += (locked.balance * locked.lockLength);
         }
       }
     }
-
-    if (!Number.isInteger(voterBalance)) {
-      throw new ContractError('Voter does not have a balance.');
+    if (voterBalance <= 0) {
+      throw new ContractError('Caller does not have locked balance.');
     }
 
     if (vote.voted.includes(caller)) {
       throw new ContractError('Caller has already voted.');
     }
 
-    if ((vote.start + voteLength) >= SmartWeave.block.height) {
+    if (SmartWeave.block.height >= (vote.start + voteLength)) {
       throw new ContractError('Vote has already concluded.');
     }
 
@@ -271,7 +272,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
     const vote: VoteInterface = votes[id];
     const qty: number = vote.qty;
 
-    if ((vote.start + voteLength) < SmartWeave.block.height) {
+    if (SmartWeave.block.height < (vote.start + voteLength)) {
       throw new ContractError('Vote has not yet concluded.');
     }
 

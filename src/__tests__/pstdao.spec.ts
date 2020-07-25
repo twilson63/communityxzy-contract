@@ -1,8 +1,6 @@
 require("typescript.api").register();
-
+import Arweave from 'arweave/node';
 import * as fs from 'fs';
-import * as path from 'path';
-import  Arweave from 'arweave/node';
 import { createContractExecutionEnvironment } from '../swglobal/contract-load';
 
 const arweave = Arweave.init({
@@ -338,5 +336,116 @@ describe('Propose a vote', () => {
     }, caller: addresses.admin });
 
     expect(state.votes.length).toBe(4);
+  });
+});
+
+describe('Votes', () => {
+  const func = 'vote';
+
+  it('should fail, not enough locked balance', () => {
+    try {
+      handler(state, { input: {
+        function: func,
+        id: 0,
+        cast: 'yay'
+      }, caller: addresses.user});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+
+    expect(state.votes[0].yays).toBe(0);
+    expect(state.votes[1].nays).toBe(0);
+  });
+  it('should fail, not part of the DAO', () => {
+    try {
+      handler(state, { input: {
+        function: func,
+        id: 0,
+        cast: 'yay'
+      }, caller: addresses.nonuser});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+
+    expect(state.votes[0].yays).toBe(0);
+    expect(state.votes[1].nays).toBe(0);
+  });
+
+  it('should vote yes on proposal', () => {
+    handler(state, { input: {
+      function: func,
+      id: 0,
+      cast: 'yay'
+    }, caller: addresses.admin});
+
+    expect(state.votes[0].yays).toBe(100000);
+    expect(state.votes[0].nays).toBe(0);
+  });
+
+  it('should vote no on proposal', () => {
+    handler(state, { input: {
+      function: func,
+      id: 1,
+      cast: 'nay'
+    }, caller: addresses.admin});
+  });
+
+  it('should fail, already voted', () => {
+    try {
+      handler(state, { input: {
+        function: func,
+        id: 0,
+        cast: 'yay'
+      }, caller: addresses.admin});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+
+    expect(state.votes[0].yays).toBe(100000);
+    expect(state.votes[0].nays).toBe(0);
+  });
+
+  it('should fail, voter locked amount is over', () => {
+    handler(state, { input: {
+      function: 'lock',
+      qty: 50,
+      lockLength: 10
+    }, caller: addresses.user});
+
+    swGlobal.block.increment(50);
+
+    try { 
+      handler(state, { input: {
+        fucntion: func,
+        id: 0,
+        cast: 'nay'
+      }, caller: addresses.user});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+
+    expect(state.votes[0].nays).toBe(0);
+  });
+
+  it('should fail, vote period is over', () => {
+    swGlobal.block.increment(2000);
+
+    handler(state, { input: {
+      function: 'lock',
+      qty: 50,
+      lockLength: 10
+    }, caller: addresses.user});
+
+    try {
+      handler(state, { input: {
+        function: func,
+        id: 0,
+        cast: 'nay'
+      }, caller: addresses.user});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+
+    expect(state.votes[0].nays).toBe(0);
   });
 });
