@@ -6,7 +6,7 @@
   "lockedBalances": {
     "uhE-QeYS8i4pmUtnxQyHD7dzXFNaJ9oMK-IM-QPNY6M": [{
       "balance": 1000,
-      "period": 100,
+      "lockedLength": 100,
       "start": 412341
     }]
   },
