@@ -198,9 +198,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
       }, ...lockLength };
 
       votes.push(vote);
-    }
-
-    if (voteType === 'set') {
+    } else if (voteType === 'set') {
       if (typeof input.key !== "string") {
         throw new ContractError('Data type of key not supported.');
       }
@@ -213,10 +211,10 @@ export function handle(state: StateInterface, action: ActionInterface) {
       }};
       
       votes.push(vote);
-    }
-
-    if (voteType === 'indicative') {
+    } else if (voteType === 'indicative') {
       votes.push(vote);
+    } else {
+      throw new ContractError('Invalid vote type.');
     }
 
     return { state };
@@ -304,7 +302,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
         const locked: LockedParamsInterface = {
           balance: qty,
           start: SmartWeave.block.height,
-          lockLength: vote.lockedLength
+          lockLength: vote.lockLength
         };
 
         if(vote.recipient in lockedBalances) {

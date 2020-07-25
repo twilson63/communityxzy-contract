@@ -1,3 +1,5 @@
+require("typescript.api").register();
+
 import * as fs from 'fs';
 import * as path from 'path';
 import  Arweave from 'arweave/node';
@@ -9,10 +11,10 @@ const arweave = Arweave.init({
   port: 443
 });
 
-const pstFile = path.resolve(__dirname, '../../dist/pstdao.js');
+const { handle } = require('../pstdao.ts');
 let state = JSON.parse(fs.readFileSync('./src/pstdao.json', 'utf8'));
 
-let { handler, swGlobal } = createContractExecutionEnvironment(arweave, fs.readFileSync(pstFile, 'utf8'), 'bYz5YKzHH97983nS8UWtqjrlhBHekyy-kvHt_eBxBBY');
+let { handler, swGlobal } = createContractExecutionEnvironment(arweave, handle.toString(), 'bYz5YKzHH97983nS8UWtqjrlhBHekyy-kvHt_eBxBBY');
 
 const addresses = {
   admin: 'uhE-QeYS8i4pmUtnxQyHD7dzXFNaJ9oMK-IM-QPNY6M',
@@ -23,7 +25,7 @@ const addresses = {
 describe('Transfer Balances', () => {
   const func = 'transfer';
 
-  it(`Should transfer from ${addresses.admin} to ${addresses.user}`, () => {
+  it(`should transfer from ${addresses.admin} to ${addresses.user}`, () => {
     handler(state, {input: {
       function: func,
       target: addresses.user,
@@ -35,7 +37,7 @@ describe('Transfer Balances', () => {
     expect(state.balances[addresses.user]).toBe(1000);
   });
 
-  it('Should fail, invalid address', () => {
+  it('should fail, invalid address', () => {
     try {
       handler(state, {input: {
         function: func,
@@ -50,7 +52,7 @@ describe('Transfer Balances', () => {
     expect(state.balances[addresses.nonuser]).toBeUndefined();
   });
 
-  it('Should fail with not enough balance', () => {
+  it('should fail with not enough balance', () => {
     try {
       handler(state, {input: {
         function: func,
@@ -65,7 +67,7 @@ describe('Transfer Balances', () => {
     expect(state.balances[addresses.nonuser]).toBeUndefined();
   });
 
-  it('Should fail with same target and caller', () => {
+  it('should fail with same target and caller', () => {
     try {
       handler(state, {input: {
         function: func,
@@ -79,52 +81,52 @@ describe('Transfer Balances', () => {
     expect(state.balances[addresses.user]).toBe(1000);
   });
 
-  it(`Should transfer from ${addresses.user} to ${addresses.admin}`, () => {
+  it(`should transfer from ${addresses.user} to ${addresses.admin}`, () => {
     handler(state, {input: {
       function: 'transfer',
       target: addresses.admin,
-      qty: 1000
+      qty: 900
     }, caller: addresses.user});
 
-    expect(state.balances[addresses.user]).toBe(0);
-    expect(state.balances[addresses.admin]).toBe(10000000);
+    expect(state.balances[addresses.user]).toBe(100);
+    expect(state.balances[addresses.admin]).toBe(9999900);
   });
 });
 
 describe('Get account balances', () => {
   const func = 'balance';
 
-  it(`Should get the balance for ${addresses.admin}`, async () => {
+  it(`should get the balance for ${addresses.admin}`, async () => {
     const res = await handler(state, {input: {
       function: func,
       target: addresses.admin
     }, caller: addresses.admin});
 
     expect(res.result.target).toBe(addresses.admin);
-    expect(res.result.balance).toBe(10000000);
+    expect(res.result.balance).toBe(9999900);
   });
 
-  it(`Should get the balance for ${addresses.admin}`, async () => {
+  it(`should get the balance for ${addresses.admin}`, async () => {
     const res = await handler(state, {input: {
       function: func,
       target: addresses.admin
     }, caller: addresses[3]});
 
     expect(res.result.target).toBe(addresses.admin);
-    expect(res.result.balance).toBe(10000000);
+    expect(res.result.balance).toBe(9999900);
   });
 
-  it(`Should get the balance for ${addresses.user}`, async () => {
+  it(`should get the balance for ${addresses.user}`, async () => {
     const res = await handler(state, {input: {
       function: func,
       target: addresses.user
     }, caller: addresses.admin});
 
     expect(res.result.target).toBe(addresses.user);
-    expect(res.result.balance).toBe(0);
+    expect(res.result.balance).toBe(100);
   });
 
-  it(`Should get an error, account doesn't exists.`, async () => {
+  it(`should get an error, account doesn't exists.`, async () => {
     try {
       const res = await handler(state, {input: {
         function: func,
@@ -238,3 +240,4 @@ describe('Locking system', () => {
     });
   });
 });
+
