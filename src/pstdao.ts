@@ -60,8 +60,8 @@ export function handle(state: StateInterface, action: ActionInterface) {
       throw new ContractError('Must specificy target to get balance for.');
     }
 
-    if (typeof balances[target] !== 'number') {
-      throw new ContractError('Cannnot get balance, target does not exist');
+    if (!(target in balances)) {
+      throw new ContractError('Cannnot get balance, target does not exist.');
     }
 
     return { result: { target, balance: balances[target] } };
@@ -72,14 +72,14 @@ export function handle(state: StateInterface, action: ActionInterface) {
   /** Lock Function */
   if(input.function === 'lock') {
     const qty = input.qty;
-    const period = input.lockedLength;
+    const period = input.lockLength;
 
     if(!Number.isInteger(qty) || qty <= 0) {
       throw new ContractError('Quantity must be a positive integer.');
     }
 
     if(!Number.isInteger(period) || period <= 0 || period > state.lockedMaxLength) {
-      throw new ContractError(`Period is out of range. Max period is ${state.lockedMaxLength}`);
+      throw new ContractError(`lockLength is out of range. Max lockLength is ${state.lockedMaxLength}`);
     }
 
     const balance = balances[caller];

@@ -32,6 +32,7 @@ export interface InputInterface extends VoteInterface {
   target?: string;
   id?: string;
   cast?: string;
+  lockLength?: number;
 }
 
 export interface VoteInterface {
