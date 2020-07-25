@@ -1,0 +1,17 @@
+{
+  "ticker": "EXAMPLE_PSDAO",
+  "balances": {
+    "uhE-QeYS8i4pmUtnxQyHD7dzXFNaJ9oMK-IM-QPNY6M": 10000000
+  },
+  "lockedBalances": {
+    "uhE-QeYS8i4pmUtnxQyHD7dzXFNaJ9oMK-IM-QPNY6M": [{
+      "balance": 1000,
+      "period": 100,
+      "start": 412341
+    }]
+  },
+  "votes": [],
+  "quorum": 0.5,
+  "voteLength": 2000,
+  "lockedMaxLength": 10000
+}
