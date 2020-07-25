@@ -241,3 +241,102 @@ describe('Locking system', () => {
   });
 });
 
+
+describe('Propose a vote', () => {
+  const func = 'propose';
+
+  it('should fail, not locked balance', () => {
+    try {
+      handler(state, { input: {
+        function: func,
+        type: 'mint',
+        recipient: addresses.user,
+        qty: 100,
+        note: 'Mint 100'
+      }, caller: addresses.user});
+    
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+
+    expect(state.votes.length).toBe(0);
+  });
+
+  it('should fail, not part of the DAO', () => {
+    try {
+      handler(state, { input: {
+        function: func,
+        type: 'mint',
+        recipient: addresses.nonuser,
+        qty: 100,
+        note: 'Mint 100'
+      }, caller: addresses.nonuser});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+
+    expect(state.votes.length).toBe(0);
+  });
+
+  it('should fail, invalid vote type DAO', () => {
+    try {
+      handler(state, { input: {
+        function: func,
+        type: 'invalidFunction',
+        recipient: addresses.user,
+        qty: 100,
+        note: 'Mint 100'
+      }, caller: addresses.admin});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+
+    expect(state.votes.length).toBe(0);
+  });
+
+  it('should create a mint proposal', () => {
+    handler(state, { input: {
+      function: func,
+      type: 'mint',
+      recipient: addresses.user,
+      qty: 100,
+      note: 'Mint 100'
+    }, caller: addresses.admin });
+
+    expect(state.votes.length).toBe(1);
+  });
+
+  it('should create a mintLocked proposal', () => {
+    handler(state, { input: {
+      function: func,
+      type: 'mintLocked',
+      recipient: addresses.user,
+      qty: 100,
+      note: 'Mint 100'
+    }, caller: addresses.admin });
+
+    expect(state.votes.length).toBe(2);
+  });
+
+  it('should create a set proposal', () => {
+    handler(state, { input: {
+      function: func,
+      type: 'set',
+      key: 'quorum',
+      value: 0.3,
+      note: 'Mint 100'
+    }, caller: addresses.admin });
+
+    expect(state.votes.length).toBe(3);
+  });
+
+  it('should create a inidicative proposal', () => {
+    handler(state, { input: {
+      function: func,
+      type: 'indicative',
+      note: 'Let\'s do this and that.'
+    }, caller: addresses.admin });
+
+    expect(state.votes.length).toBe(4);
+  });
+});
