@@ -4,6 +4,7 @@ export interface StateInterface {
   lockedBalances: LockedBalanceInterface;
   votes: VoteInterface[];
   quorum: number;
+  support: number;
   voteLength: number;
   lockMinLength: number;
   lockMaxLength: number;
@@ -41,7 +42,7 @@ export interface VoteInterface {
   recipient?: string;
   qty?: number;
   key?: string;
-  value?: string;
+  value?: any;
   note?: string;
   yays?: number;
   nays?: number;

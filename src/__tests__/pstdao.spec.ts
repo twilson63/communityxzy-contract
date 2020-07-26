@@ -449,3 +449,14 @@ describe('Votes', () => {
     expect(state.votes[0].nays).toBe(0);
   });
 });
+
+describe('Finalize votes', () => {
+  it('should finalize a mint vote', () => {
+    handler(state, { input: {
+      function: 'finalize',
+      id: 0
+    }, caller: addresses.admin });
+
+    console.log(state.votes[0]);
+  });
+});

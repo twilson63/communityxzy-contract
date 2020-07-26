@@ -19,7 +19,8 @@ The DAO state has the following structure:
     }]
   },
   votes: VoteInterface[], 
-  quorum: number, // quorum is between 0.1 and 0.99
+  quorum: number, // quorum is between 0.01 and 0.99
+  support: number, // between 0.01-0.99, how much % yays for a proposal to be approved
   voteLength: number, // How many blocks to leave a proposal open
   lockMinLength: number, // Minimum lockLength allowed
   lockMaxLength: number // Maximum lockLength allowed

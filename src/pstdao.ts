@@ -205,6 +205,26 @@ export function handle(state: StateInterface, action: ActionInterface) {
       }
 
       // TODO: Add validators
+      if(input.key === 'quorum') {
+        if(isNaN(input.value) || input.value < 0.01 || input.value > 0.99) {
+          throw new ContractError('Quorum must be between 0.01 and 0.99.');
+        }
+      } else if(input.key === 'support') {
+        if(isNaN(input.value) || input.value < 0.01 || input.value > 0.99) {
+          throw new ContractError('Support must be between 0.01 and 0.99.');
+        }
+      } else if(input.key === 'lockMinLength') {
+        if(isNaN(input.value) || input.value < 1 || input.value >= state.lockMaxLength) {
+          throw new ContractError('lockMinLength cannot be less than 1 and cannot be equal or greater than lockMaxLength.');
+        }
+      } else if(input.key === 'lockMaxLength') {
+        if(isNaN(input.value) || input.value <= state.lockMinLength) {
+          throw new ContractError('lockMaxLength cannot be less than or equal to lockMinLength.');
+        }
+      } else {
+        // Reject other keys changes
+        throw new ContractError('This DAO option cannot be changed.');
+      }
 
       Object.assign(vote, {
         'key': input.key,
@@ -280,7 +300,13 @@ export function handle(state: StateInterface, action: ActionInterface) {
       throw new ContractError('Vote is not active.');
     }
 
-    const totalSupply = sum(balances);
+    // TODO: Check this total supply and quorum.
+    let totalSupply: number = Object.values(state.balances).reduce((a, b) => a + b, 0);
+    const lockedAccounts = Object.keys(state.lockedBalances);
+    for(let i = 0, j = lockedAccounts.length; i < j; i++) {
+      const locked = state.lockedBalances[lockedAccounts[i]];
+      totalSupply += locked.map(a => a.balance).reduce((a, b) => a + b, 0);
+    }
 
     if((totalSupply * quorum) > (vote.yays + vote.nays)) {
       vote.status = 'quorumFailed';
@@ -325,8 +351,4 @@ export function handle(state: StateInterface, action: ActionInterface) {
   }
 
   throw new ContractError(`No function supplied or function not recognised: "${input.function}"`);
-}
-
-function sum(obj) {
-  return Object.keys(obj).reduce((sum,key)=>sum+parseFloat(obj[key]||0),0);
 }
