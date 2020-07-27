@@ -140,33 +140,36 @@ describe('Get account balances', () => {
 
 // Had to update SmartWeave to have a custom nonce for these tests.
 describe('Locking system', () => {
-  let bal = 100;
+  const bal = 100;
+  const lockLength = 5;
+
   it(`should not lock ${bal} from ${addresses.admin}`, () => {
     try {
       handler(state, {input: {
         function: 'lock',
         qty: bal,
-        lockLength: 1
+        lockLength: 1,
       }, caller: addresses.admin});
     } catch (err) {
       expect(err.name).toBe('ContractError');
     }
 
-    expect(state.lockedBalances[addresses.admin].length).toBe(1);
+    expect(state.vault[addresses.admin].length).toBe(1);
   });
 
   it(`should lock ${bal} from ${addresses.admin}`, () => {
     const prevBal = state.balances[addresses.admin];
+
     handler(state, {input: {
       function: 'lock',
       qty: bal,
-      lockLength: 5
+      lockLength
     }, caller: addresses.admin});
 
-    expect(state.lockedBalances[addresses.admin].length).toBe(2);
-    expect(state.lockedBalances[addresses.admin][1]).toEqual({
+    expect(state.vault[addresses.admin].length).toBe(2);
+    expect(state.vault[addresses.admin][1]).toEqual({
       balance: bal,
-      lockLength: 5,
+      end: swGlobal.block.height + lockLength,
       start: 0
     });
     expect(state.balances[addresses.admin]).toBe((prevBal - bal));
@@ -174,7 +177,7 @@ describe('Locking system', () => {
 
   it('should not allow unlock', () => {
     handler(state, {input: {function: 'unlock'}, caller: addresses.admin});
-    expect(state.lockedBalances[addresses.admin].length).toBe(2);
+    expect(state.vault[addresses.admin].length).toBe(2);
   });
 
   it('should not allow unlock', () => {
@@ -184,7 +187,7 @@ describe('Locking system', () => {
     } catch (err) {
       expect(err.name).toBe('ContractError');
     }
-    expect(state.lockedBalances[addresses.admin].length).toBe(2);
+    expect(state.vault[addresses.admin].length).toBe(2);
   });
 
   it('should allow unlock', () => {
@@ -194,21 +197,28 @@ describe('Locking system', () => {
       swGlobal.block.increment();
     }
     handler(state, {input: {function: 'unlock'}, caller: addresses.admin});
-    expect(state.lockedBalances[addresses.admin].length).toBe(1);
+    expect(state.vault[addresses.admin].length).toBe(1);
     expect(state.balances[addresses.admin]).toBe((prevBal + bal));
   });
 
   it('should allow a lock without giving a target', () => {
+    const lockLength = 5;
+    const prevBal = state.balances[addresses.admin];
+    const bal = 5;
+
     handler(state, {input: {
       function: 'lock',
       qty: bal,
-      lockLength: 5
+      lockLength
     }, caller: addresses.admin});
+
+    expect(state.vault[addresses.admin].length).toBe(2);
+    expect(state.balances[addresses.admin]).toBe(prevBal - bal);
   });
 
   it('should not allow unlock', () => {
     handler(state, {input: {function: 'unlock'}, caller: addresses.admin});
-    expect(state.lockedBalances[addresses.admin].length).toBe(2);
+    expect(state.vault[addresses.admin].length).toBe(2);
   });
 
   it('should allow 1 unlock', () => {
@@ -216,7 +226,7 @@ describe('Locking system', () => {
       swGlobal.block.increment();
     }
     handler(state, {input: {function: 'unlock'}, caller: addresses.admin});
-    expect(state.lockedBalances[addresses.admin].length).toBe(1);
+    expect(state.vault[addresses.admin].length).toBe(1);
   });
 
   it('should return the account balances', async () => {
@@ -225,8 +235,8 @@ describe('Locking system', () => {
       balance: 1000
     };
 
-    const res1 = await handler(state, {input: {function: 'lockedBalance'}, caller: addresses.admin});
-    const res2 = await handler(state, {input: {function: 'lockedBalance', target: addresses.user}, caller: addresses.admin});
+    const res1 = await handler(state, {input: {function: 'vaultBalance'}, caller: addresses.admin});
+    const res2 = await handler(state, {input: {function: 'vaultBalance', target: addresses.user}, caller: addresses.admin});
     expect(res1.result).toEqual({
       target: addresses.admin,
       balance: 1000
@@ -356,6 +366,7 @@ describe('Votes', () => {
     expect(state.votes[0].yays).toBe(0);
     expect(state.votes[1].nays).toBe(0);
   });
+
   it('should fail, not part of the DAO', () => {
     try {
       handler(state, { input: {
@@ -388,6 +399,9 @@ describe('Votes', () => {
       id: 1,
       cast: 'nay'
     }, caller: addresses.admin});
+
+    expect(state.votes[1].yays).toBe(0);
+    expect(state.votes[1].nays).toBe(100000);
   });
 
   it('should fail, already voted', () => {
@@ -427,6 +441,21 @@ describe('Votes', () => {
     expect(state.votes[0].nays).toBe(0);
   });
 
+  it('should fail, locked balance was after proposal creation', () => {
+    swGlobal.block.increment();
+
+    handler(state, {input: {function: 'transfer', qty: 100, target: addresses.user}, caller: addresses.admin});
+    handler(state, {input: {function: 'lock', qty: 100, lockLength: 10}, caller: addresses.user});
+
+    try {
+      handler(state, { input: { function: func, id: 2, cast: 'yay'}, caller: addresses.user});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+    
+    expect(state.votes[2].yays).toBe(0);
+  });
+
   it('should fail, vote period is over', () => {
     swGlobal.block.increment(2000);
 
@@ -456,7 +485,28 @@ describe('Finalize votes', () => {
       function: 'finalize',
       id: 0
     }, caller: addresses.admin });
+    
+    expect(state.votes[0].status).toBe('passed');
+  });
 
-    console.log(state.votes[0]);
+  it('should finalize a mintLocked with status failed', () => {
+    handler(state, { input: {
+      function: 'finalize',
+      id: 1
+    }, caller: addresses.admin });
+
+    expect(state.votes[1].status).toBe('failed');
+  });
+
+  it('should finalize an indicative with status quorumFailed', () => {
+    // Increment to allow a vote
+    swGlobal.block.increment();
+    
+    handler(state, {input: { function: 'propose', type: 'indicative', note: 'My note'}, caller: addresses.user});
+    handler(state, {input: {function: 'vote', id: (state.votes.length - 1), cast: 'yay'}, caller: addresses.user});
+    swGlobal.block.increment(2000);
+    handler(state, { input: {function: 'finalize', id: (state.votes.length - 1)}, caller: addresses.user});
+
+    expect(state.votes[(state.votes.length - 1)].status).toBe('quorumFailed');
   });
 });

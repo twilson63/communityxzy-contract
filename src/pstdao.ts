@@ -1,4 +1,4 @@
-import { StateInterface, ActionInterface, VoteInterface, BalancesInterface, InputInterface, LockedBalanceInterface, LockedParamsInterface } from "./faces";
+import { StateInterface, ActionInterface, VoteInterface, BalancesInterface, InputInterface, VaultInterface, VaultParamsInterface } from "./faces";
 
 declare const ContractError: any;
 declare const SmartWeave: any;
@@ -6,7 +6,7 @@ declare const SmartWeave: any;
 export function handle(state: StateInterface, action: ActionInterface) {
 
   const balances: BalancesInterface = state.balances;
-  const lockedBalances: LockedBalanceInterface = state.lockedBalances;
+  const vault: VaultInterface = state.vault;
   const votes: VoteInterface[] = state.votes;
   const input: InputInterface = action.input;
   const caller: string = action.caller;
@@ -88,19 +88,22 @@ export function handle(state: StateInterface, action: ActionInterface) {
     }
 
     balances[caller] -= qty;
-    if (caller in lockedBalances) {
+    const start = SmartWeave.block.height;
+    const end = start + lockLength;
+
+    if (caller in vault) {
       // Wallet already exists in state, add new tokens
-      lockedBalances[caller].push({
+      vault[caller].push({
         balance: qty,
-        lockLength,
-        start: SmartWeave.block.height
+        end,
+        start
       });
     } else {
       // Wallet is new, set starting balance
-      lockedBalances[caller] = [{
+      vault[caller] = [{
         balance: qty,
-        lockLength,
-        start: SmartWeave.block.height
+        end,
+        start
       }];
     }
 
@@ -110,14 +113,14 @@ export function handle(state: StateInterface, action: ActionInterface) {
   /** Unlock Function */
   if(input.function === 'unlock') {
     // After the time has passed for locked tokens, unlock them calling this function.
-    if(caller in lockedBalances) {
-      let i = lockedBalances[caller].length;
+    if(caller in vault) {
+      let i = vault[caller].length;
       while(i--) {
-        const locked = lockedBalances[caller][i];
-        if(SmartWeave.block.height >= (locked.start + locked.lockLength)) {
+        const locked = vault[caller][i];
+        if(SmartWeave.block.height >= locked.end) {
           // Unlock
           balances[caller] += locked.balance;
-          lockedBalances[caller].splice(i, 1);
+          vault[caller].splice(i, 1);
         }
       }
     }
@@ -125,15 +128,15 @@ export function handle(state: StateInterface, action: ActionInterface) {
     return { state };
   }
 
-  /** LockedBalance Function */
-  if(input.function === 'lockedBalance') {
+  /** VaultBalance Function */
+  if(input.function === 'vaultBalance') {
     const target = input.target || caller;
     let balance = 0;
 
-    if(target in lockedBalances) {
+    if(target in vault) {
       const blockHeight = SmartWeave.block.height;
-      const filtered = lockedBalances[target].filter(a => {
-        return (blockHeight < (a.start + a.lockLength));
+      const filtered = vault[target].filter(a => {
+        return (blockHeight < (a.start + a.end));
       });
 
       for(let i = 0, j = filtered.length; i < j; i++) {
@@ -153,13 +156,22 @@ export function handle(state: StateInterface, action: ActionInterface) {
       throw new ContractError('Note format not recognized.');
     }
 
-    if(!(caller in lockedBalances)) {
+    if(!(caller in vault)) {
       throw new ContractError('caller need to have locked balances.');
     }
     
-    const hasBalance = (lockedBalances[caller] && !!lockedBalances[caller].filter(a => a.balance > 0).length);
+    const hasBalance = (vault[caller] && !!vault[caller].filter(a => a.balance > 0).length);
     if(!hasBalance) {
       throw new ContractError('Caller doesn\'t have any locked balance.');
+    }
+
+    let totalWeight = 0;
+    const vaultValues = Object.values(vault);
+    for(let i = 0, j = vaultValues.length; i < j; i++) {
+      const locked = vaultValues[i];
+      for(let j = 0, k = locked.length; j < k; j++) {
+        totalWeight += locked[j].balance * (locked[j].end - locked[j].start);
+      }
     }
 
     let vote: VoteInterface = {
@@ -169,7 +181,8 @@ export function handle(state: StateInterface, action: ActionInterface) {
       yays: 0,
       nays: 0,
       voted: [],
-      start: SmartWeave.block.height
+      start: SmartWeave.block.height,
+      totalWeight
     };
 
     if (voteType === 'mint' || voteType === 'mintLocked') {
@@ -186,8 +199,8 @@ export function handle(state: StateInterface, action: ActionInterface) {
 
       let lockLength = {};
       if(input.lockLength) {
-        if(!Number.isInteger(input.lockLength)) {
-          throw new ContractError('Invalid value for "lockedLength". Must be a positive integer.');
+        if(!Number.isInteger(input.lockLength) || input.lockLength < state.lockMinLength || input.lockLength > state.lockMaxLength) {
+          throw new ContractError(`lockLength is out of range. lockLength must be between ${state.lockMinLength} - ${state.lockMaxLength}.`);
         }
 
         lockLength = { lockLength: input.lockLength };
@@ -214,11 +227,11 @@ export function handle(state: StateInterface, action: ActionInterface) {
           throw new ContractError('Support must be between 0.01 and 0.99.');
         }
       } else if(input.key === 'lockMinLength') {
-        if(isNaN(input.value) || input.value < 1 || input.value >= state.lockMaxLength) {
+        if(!(Number.isInteger(input.value)) || input.value < 1 || input.value >= state.lockMaxLength) {
           throw new ContractError('lockMinLength cannot be less than 1 and cannot be equal or greater than lockMaxLength.');
         }
       } else if(input.key === 'lockMaxLength') {
-        if(isNaN(input.value) || input.value <= state.lockMinLength) {
+        if(!(Number.isInteger(input.value)) || input.value <= state.lockMinLength) {
           throw new ContractError('lockMaxLength cannot be less than or equal to lockMinLength.');
         }
       } else {
@@ -251,19 +264,19 @@ export function handle(state: StateInterface, action: ActionInterface) {
     }
 
     const vote = votes[id];
-    
-    let voterBalance = 0;
-    if(caller in lockedBalances) {
-      for(let i = 0, j = lockedBalances[caller].length; i < j; i++) {
-        const locked = lockedBalances[caller][i];
 
-        if(SmartWeave.block.height < (locked.start + locked.lockLength)) {
-          voterBalance += (locked.balance * locked.lockLength);
+    let voterBalance = 0;
+    if(caller in vault) {
+      for(let i = 0, j = vault[caller].length; i < j; i++) {
+        const locked = vault[caller][i];
+
+        if((locked.start < vote.start) && locked.end >= vote.start) {
+          voterBalance += locked.balance * (locked.end - locked.start);
         }
       }
     }
     if (voterBalance <= 0) {
-      throw new ContractError('Caller does not have locked balance.');
+      throw new ContractError('Caller does not have locked balances for this vote.');
     }
 
     if (vote.voted.includes(caller)) {
@@ -274,9 +287,9 @@ export function handle(state: StateInterface, action: ActionInterface) {
       throw new ContractError('Vote has already concluded.');
     }
 
-    if (cast == 'yay') {
+    if (cast === 'yay') {
       vote.yays += voterBalance;
-    } else if (cast == 'nay') {
+    } else if (cast === 'nay') {
       vote.nays += voterBalance;
     } else {
       throw new ContractError('Vote cast type unrecognised.');
@@ -300,15 +313,8 @@ export function handle(state: StateInterface, action: ActionInterface) {
       throw new ContractError('Vote is not active.');
     }
 
-    // TODO: Check this total supply and quorum.
-    let totalSupply: number = Object.values(state.balances).reduce((a, b) => a + b, 0);
-    const lockedAccounts = Object.keys(state.lockedBalances);
-    for(let i = 0, j = lockedAccounts.length; i < j; i++) {
-      const locked = state.lockedBalances[lockedAccounts[i]];
-      totalSupply += locked.map(a => a.balance).reduce((a, b) => a + b, 0);
-    }
-
-    if((totalSupply * quorum) > (vote.yays + vote.nays)) {
+    // Check this total supply and quorum.
+    if((vote.totalWeight * quorum) > (vote.yays + vote.nays)) {
       vote.status = 'quorumFailed';
       return state;
     }
@@ -326,18 +332,21 @@ export function handle(state: StateInterface, action: ActionInterface) {
         }
 
       } else if(vote.type === 'mintLocked') {
-        const locked: LockedParamsInterface = {
+        const start = SmartWeave.block.height;
+        const end = start + vote.lockLength;
+
+        const locked: VaultParamsInterface = {
           balance: qty,
-          start: SmartWeave.block.height,
-          lockLength: vote.lockLength
+          start,
+          end
         };
 
-        if(vote.recipient in lockedBalances) {
+        if(vote.recipient in vault) {
           // Existing account
-          lockedBalances[vote.recipient].push(locked);
+          vault[vote.recipient].push(locked);
         } else {
           // New locked account
-          lockedBalances[vote.recipient] = [locked];
+          vault[vote.recipient] = [locked];
         }
       } else if (vote.type === 'set') {
         state[vote.key] = vote.value;

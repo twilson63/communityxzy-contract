@@ -3,11 +3,11 @@
   "balances": {
     "uhE-QeYS8i4pmUtnxQyHD7dzXFNaJ9oMK-IM-QPNY6M": 10000000
   },
-  "lockedBalances": {
+  "vault": {
     "uhE-QeYS8i4pmUtnxQyHD7dzXFNaJ9oMK-IM-QPNY6M": [{
       "balance": 1000,
-      "lockLength": 100,
-      "start": 25
+      "end": 100,
+      "start": 0
     }]
   },
   "votes": [],

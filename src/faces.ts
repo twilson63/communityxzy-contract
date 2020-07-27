@@ -1,7 +1,7 @@
 export interface StateInterface {
   ticker: string;
   balances: BalancesInterface;
-  lockedBalances: LockedBalanceInterface;
+  vault: VaultInterface;
   votes: VoteInterface[];
   quorum: number;
   support: number;
@@ -14,14 +14,14 @@ export interface BalancesInterface {
   [key: string]: number;
 }
 
-export interface LockedBalanceInterface {
-  [key: string]: LockedParamsInterface[];
+export interface VaultInterface {
+  [key: string]: VaultParamsInterface[];
 }
 
-export interface LockedParamsInterface {
+export interface VaultParamsInterface {
   balance: number;
-  lockLength: number;
   start: number;
+  end: number;
 }
 
 export interface ActionInterface {
@@ -30,7 +30,7 @@ export interface ActionInterface {
 }
 
 export interface InputInterface extends VoteInterface {
-  function: 'transfer' | 'balance' | 'vote' | 'propose' | 'finalize' | 'lock' | 'unlock' | 'lockedBalance';
+  function: 'transfer' | 'balance' | 'vote' | 'propose' | 'finalize' | 'lock' | 'unlock' | 'vaultBalance';
   target?: string;
   id?: string;
   cast?: string;
@@ -39,6 +39,7 @@ export interface InputInterface extends VoteInterface {
 export interface VoteInterface {
   status?: 'active' | 'quorumFailed' | 'passed' | 'failed';
   type?: 'mint' | 'mintLocked' | 'indicative' | 'set';
+  totalWeight?: number;
   recipient?: string;
   qty?: number;
   key?: string;

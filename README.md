@@ -11,10 +11,10 @@ The DAO state has the following structure:
   balances: {
     [key: string]: number // Positive integer
   },
-  lockedBalances: {
+  vault: {
     [key: string]: [{
       balance: number, // Positive integer
-      lockLength: number, // How many blocks to lock this balance.
+      end: number, // At what block the lock ends.
       start: number // At what block the lock starts.
     }]
   },
@@ -34,7 +34,7 @@ Here's an example of what the state when creating the contract should look like:
   "balances": {
     "uhE-QeYS8i4pmUtnxQyHD7dzXFNaJ9oMK-IM-QPNY6M": 10000000
   },
-  "lockedBalances": {},
+  "vault": {},
   "votes": [],
   "quorum": 0.5,
   "voteLength": 2000,
@@ -58,6 +58,7 @@ interface VoteInterface {
   voted?: string[];
   start?: number;
   lockLength?: number;
+  totalWeight?: number;
 }
 ```
 
@@ -87,7 +88,7 @@ result: {
 ## Locking System
 
 ### Lock
-Lock a balance to increase it's vote weight on the DAO. The voting weight is: `balance + (lockedBalance * lockLength)`.
+Lock a balance to increase it's vote weight on the DAO. The voting weight is: `lockedBalance * (end - start)`.
 
 #### Requires:
 - **qty**: Balance amount to lock.
@@ -97,13 +98,13 @@ Lock a balance to increase it's vote weight on the DAO. The voting weight is: `b
 `{ state }`
 
 ### Unlock
-Unlock all locked balances that are over the *lockLength* set while locking.
+Unlock all locked balances that are over the *end* set while locking.
 
 #### Returns:
 `{ state }`
 
-### LockedBalance
-Check the current balance of an account.
+### VaultBalance
+Check the current locked balance of an account.
 
 #### Optional:
 - **target**: To whom check the balance. If not provided, caller is used.
