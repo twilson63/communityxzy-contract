@@ -110,6 +110,26 @@ export function handle(state: StateInterface, action: ActionInterface) {
     return { state };
   }
 
+  if(input.function === 'increaseVault') {
+    const lockLength = input.lockLength;
+    const id = input.id;
+    if(!Number.isInteger(lockLength) || lockLength < state.lockMinLength || lockLength > state.lockMaxLength) {
+      throw new ContractError(`lockLength is out of range. lockLength must be between ${state.lockMinLength} - ${state.lockMaxLength}.`);
+    }
+
+    if(caller in vault) {
+      if(!vault[caller][id]) {
+        throw new ContractError('Invalid vault ID.');
+      }
+    } else {
+      throw new ContractError('Caller does not have a vault.');
+    }
+
+    vault[caller][id].end = (SmartWeave.block.height + lockLength);
+
+    return { state };
+  }
+
   /** Unlock Function */
   if(input.function === 'unlock') {
     // After the time has passed for locked tokens, unlock them calling this function.

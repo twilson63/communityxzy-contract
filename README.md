@@ -103,6 +103,13 @@ Unlock all locked balances that are over the *end* set while locking.
 #### Returns:
 `{ state }`
 
+### IncreaseVault
+Increase a locked balance lockedLength.
+
+#### Requires:
+- **id**: The vault ID to be locked longer.
+- **lockLength**: How many more blocks this vault will be locked.
+
 ### VaultBalance
 Check the current locked balance of an account.
 

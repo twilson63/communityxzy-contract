@@ -143,6 +143,24 @@ describe('Locking system', () => {
   const bal = 100;
   const lockLength = 5;
 
+  it('should increase the locked tokens length', () => {
+    handler(state, { input: { 
+      function: 'increaseVault',
+      id: 0,
+      lockLength: 101
+    }, caller: addresses.admin});
+
+    expect(state.vault[addresses.admin][0].end).toBe(101);
+
+    handler(state, { input: { 
+      function: 'increaseVault',
+      id: 0,
+      lockLength: 100
+    }, caller: addresses.admin});
+
+    expect(state.vault[addresses.admin][0].end).toBe(100);
+  });
+
   it(`should not lock ${bal} from ${addresses.admin}`, () => {
     try {
       handler(state, {input: {
