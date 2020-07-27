@@ -21,7 +21,7 @@
   "devDependencies": {
     "@types/jest": "^26.0.7",
     "copyfiles": "^2.3.0",
-    "esbuild": "^0.6.6",
+    "esbuild": "^0.6.8",
     "glob": "^7.1.6",
     "jest": "^26.1.0",
     "rimraf": "^3.0.2",
