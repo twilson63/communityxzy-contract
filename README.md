@@ -155,7 +155,7 @@ Holders are able to propose a new vote, this will create a new proposal.
   - **note**: Proposal description
 
 #### Returns:
-`state`
+`{ state }`
 
 ### Vote
 Cast a vote on one of the proposals.
@@ -165,7 +165,7 @@ Cast a vote on one of the proposals.
 - **cast**: What vote are you casting `'yay' || 'nay'`.
 
 #### Returns:
-`state`
+`{ state }`
 
 ### Finalize
 After a vote is concluded, we should call finalize to make it in effect. It will update the vote status to `passed`, and execute if needed, or `failed`.
@@ -174,4 +174,4 @@ After a vote is concluded, we should call finalize to make it in effect. It will
 - **id**: Proposal ID.
 
 #### Returns:
-`state`
+`{ state }`
