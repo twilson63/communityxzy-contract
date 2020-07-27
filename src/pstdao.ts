@@ -3,7 +3,7 @@ import { StateInterface, ActionInterface, VoteInterface, BalancesInterface, Inpu
 declare const ContractError: any;
 declare const SmartWeave: any;
 
-export function handle(state: StateInterface, action: ActionInterface) {
+export function handle(state: StateInterface, action: ActionInterface): { state: StateInterface } | { result: any } {
 
   const balances: BalancesInterface = state.balances;
   const vault: VaultInterface = state.vault;
@@ -336,7 +336,7 @@ export function handle(state: StateInterface, action: ActionInterface) {
     // Check this total supply and quorum.
     if((vote.totalWeight * quorum) > (vote.yays + vote.nays)) {
       vote.status = 'quorumFailed';
-      return state;
+      return { state };
     }
 
     if (vote.yays > vote.nays) {
