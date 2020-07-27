@@ -78,7 +78,7 @@ Check the current balance of an account.
 - **target**: To whom check the balance. If not provided, caller is used.
 
 #### Returns:
-```jsonld
+```
 result: {
     target: address,
     balance: target's balance
@@ -115,6 +115,14 @@ Check the current locked balance of an account.
 
 #### Optional:
 - **target**: To whom check the balance. If not provided, caller is used.
+
+#### Returns:
+```
+result: {
+    target: address,
+    balance: target's total locked balance
+}
+```
 
 ## Voting System
 
