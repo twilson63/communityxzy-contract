@@ -12,6 +12,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   const caller: string = action.caller;
   const voteLength: number = state.voteLength;
   const quorum: number = state.quorum;
+  const support: number = state.support;
 
   /** Transfer Function */
   if (input.function === 'transfer') {
@@ -339,7 +340,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       return { state };
     }
 
-    if (vote.yays > vote.nays) {
+    if ((vote.nays !== 0 && (vote.yays / vote.nays) > support) || (vote.yays !== 0)) {
       vote.status = 'passed';
 
       if (vote.type === 'mint') {
