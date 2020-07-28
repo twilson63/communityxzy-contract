@@ -11,6 +11,7 @@
     }]
   },
   "votes": [],
+  "roles": {},
   "quorum": 0.5,
   "voteLength": 2000,
   "lockMinLength": 5,

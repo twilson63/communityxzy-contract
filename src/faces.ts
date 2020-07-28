@@ -3,11 +3,16 @@ export interface StateInterface {
   balances: BalancesInterface;
   vault: VaultInterface;
   votes: VoteInterface[];
+  roles: RoleInterface;
   quorum: number;
   support: number;
   voteLength: number;
   lockMinLength: number;
   lockMaxLength: number;
+}
+
+export interface RoleInterface {
+  [key: string]: string;
 }
 
 export interface BalancesInterface {
@@ -30,7 +35,7 @@ export interface ActionInterface {
 }
 
 export interface InputInterface extends VoteInterface {
-  function: 'transfer' | 'balance' | 'vote' | 'propose' | 'finalize' | 'lock' | 'increaseVault' | 'unlock' | 'vaultBalance';
+  function: 'transfer' | 'balance' | 'vote' | 'propose' | 'finalize' | 'lock' | 'increaseVault' | 'unlock' | 'vaultBalance' | 'role';
   target?: string;
   id?: string;
   cast?: string;

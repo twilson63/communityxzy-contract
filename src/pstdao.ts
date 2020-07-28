@@ -255,7 +255,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
         if(!(Number.isInteger(input.value)) || input.value <= state.lockMinLength) {
           throw new ContractError('lockMaxLength cannot be less than or equal to lockMinLength.');
         }
-      } else {
+      } else if(input.key === 'ticker' || input.key === 'balances' || input.key === 'vault' || input.key === 'votes' || input.key === 'roles' || input.key === 'voteLength') {
         // Reject other keys changes
         throw new ContractError('This DAO option cannot be changed.');
       }
@@ -370,7 +370,11 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
           vault[vote.recipient] = [locked];
         }
       } else if (vote.type === 'set') {
-        state[vote.key] = vote.value;
+        if(vote.key === 'role') {
+          state.roles[vote.value.target] = vote.value.role;
+        } else {
+          state[vote.key] = vote.value;
+        }
       }
 
     } else {
@@ -378,6 +382,18 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     }
 
     return { state };
+  }
+
+  /** Roles functions */
+  if(input.function === 'role') {
+    const target = input.target || caller;
+    const role = (target in state.roles)? state.roles[target] : '';
+
+    if(!role.trim().length) {
+      throw new Error('Target doesn\'t have a role specified.');
+    }
+
+    return { result: { target, role } };
   }
 
   throw new ContractError(`No function supplied or function not recognised: "${input.function}"`);
