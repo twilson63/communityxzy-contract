@@ -39,6 +39,7 @@ Here's an example of what the state when creating the contract should look like:
   },
   "vault": {},
   "votes": [],
+  "roles": {},
   "quorum": 0.5,
   "voteLength": 2000,
   "lockMinLength": 100,
