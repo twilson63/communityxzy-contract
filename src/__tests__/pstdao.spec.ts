@@ -101,12 +101,12 @@ describe('Get account balances', () => {
     }, caller: addresses.admin});
 
     expect(res.result.target).toBe(addresses.admin);
-    expect(res.result.balance).toBe(9999900);
+    expect(res.result.balance).toBe(10000900);
   });
 
-  it(`should get the balance for ${addresses.admin}`, async () => {
+  it(`should get the unlocked balance for ${addresses.admin}`, async () => {
     const res = await handler(state, {input: {
-      function: func,
+      function: 'unlockedBalance',
       target: addresses.admin
     }, caller: addresses[3]});
 

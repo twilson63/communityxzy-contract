@@ -76,7 +76,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   if(input.function === 'unlockedBalance') {
     const target = input.target || caller;
 
-    if(typeof caller !== 'string') {
+    if(typeof target !== 'string') {
       throw new ContractError('Must specificy target to get balance for.');
     }
 
