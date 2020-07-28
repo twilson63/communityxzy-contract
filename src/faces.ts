@@ -35,7 +35,7 @@ export interface ActionInterface {
 }
 
 export interface InputInterface extends VoteInterface {
-  function: 'transfer' | 'balance' | 'vote' | 'propose' | 'finalize' | 'lock' | 'increaseVault' | 'unlock' | 'vaultBalance' | 'role';
+  function: 'transfer' | 'balance' | 'unlockedBalance' | 'vote' | 'propose' | 'finalize' | 'lock' | 'increaseVault' | 'unlock' | 'vaultBalance' | 'role';
   target?: string;
   id?: string;
   cast?: string;

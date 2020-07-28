@@ -61,11 +61,32 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       throw new ContractError('Must specificy target to get balance for.');
     }
 
+    let balance = 0;
+    if (target in balances) {
+      balance = balances[target];
+    }
+    if(target in vault) {
+      balance += vault[target].map(a => a.balance).reduce((a, b) => a + b, 0);
+    }
+
+    return { result: { target, balance } };
+  }
+
+  /** Total balance function */
+  if(input.function === 'unlockedBalance') {
+    const target = input.target || caller;
+
+    if(typeof caller !== 'string') {
+      throw new ContractError('Must specificy target to get balance for.');
+    }
+
     if (!(target in balances)) {
       throw new ContractError('Cannnot get balance, target does not exist.');
     }
 
-    return { result: { target, balance: balances[target] } };
+    let balance = balances[target];
+    
+    return { result: { target, balance } };
   }
 
   /** Lock System **/
@@ -384,7 +405,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     return { state };
   }
 
-  /** Roles functions */
+  /** Roles function */
   if(input.function === 'role') {
     const target = input.target || caller;
     const role = (target in state.roles)? state.roles[target] : '';
