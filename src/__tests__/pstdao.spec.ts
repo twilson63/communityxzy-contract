@@ -344,7 +344,7 @@ describe('Propose a vote', () => {
     expect(state.votes.length).toBe(2);
   });
 
-  it('should create a set proposal', () => {
+  it('should create a set quorum proposal', () => {
     handler(state, { input: {
       function: func,
       type: 'set',
@@ -364,6 +364,51 @@ describe('Propose a vote', () => {
     }, caller: addresses.admin });
 
     expect(state.votes.length).toBe(4);
+  });
+
+  it('should not create a set proposal for balances', () => {
+    try {
+      handler(state, { input: {
+        function: func,
+        type: 'set',
+        key: 'balances',
+        value: ['random'],
+        note: 'Unable to set proposal balances.'
+      }, caller: addresses.admin });
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+
+    expect(state.balances[addresses.admin]).toBeDefined();
+  });
+
+  it('should create a set proposal for a role', () => {
+    handler(state, { input: {
+      function: func,
+      type: 'set',
+      key: 'role',
+      value: {target: addresses.admin, role: 'MAIN'},
+      note: 'Set a role MAIN to main addy'
+    }, caller: addresses.admin});
+
+    expect(state.votes[(state.votes.length - 1)].value).toEqual({
+      target: addresses.admin,
+      role: 'MAIN'
+    });
+  });
+
+  it('should create a set proposal for a custom field', () => {
+    let voteLength = state.votes.length;
+
+    handler(state, {input: {
+      function: func,
+      type: 'set',
+      key: 'customKey',
+      value: ['custom', 'value'],
+      note: 'This is my custom field note.'
+    }, caller: addresses.admin});
+
+    expect(state.votes.length).toBe(voteLength+1);
   });
 });
 
@@ -517,7 +562,7 @@ describe('Finalize votes', () => {
   });
 
   it('should finalize an indicative with status quorumFailed', () => {
-    // Increment to allow a vote
+    // Increment to allow the proposal
     swGlobal.block.increment();
     
     handler(state, {input: { function: 'propose', type: 'indicative', note: 'My note'}, caller: addresses.user});
@@ -526,5 +571,25 @@ describe('Finalize votes', () => {
     handler(state, { input: {function: 'finalize', id: (state.votes.length - 1)}, caller: addresses.user});
 
     expect(state.votes[(state.votes.length - 1)].status).toBe('quorumFailed');
+  });
+
+  it('should finalize and set a role', () => {
+    // Manually faking a locked balance.
+    state.vault[addresses.admin][0].end = 1000000;
+
+    handler(state, {input: { 
+      function: 'propose', 
+      type: 'set', 
+      key: 'role',
+      value: {target: addresses.admin, role: 'MAIN'},
+      note: 'role'
+    }, caller: addresses.user});
+
+    const lastVoteId = state.votes.length - 1;
+    handler(state, {input: {function: 'vote', id: lastVoteId, cast: 'yay'}, caller: addresses.admin});
+    swGlobal.block.increment(2000);
+    handler(state, {input: {function: 'finalize', id: lastVoteId}, caller: addresses.user});
+
+    expect(state.roles[addresses.admin]).toBe('MAIN');
   });
 });
