@@ -19,6 +19,9 @@ The DAO state has the following structure:
     }]
   },
   votes: VoteInterface[], 
+  roles: {
+      [key: string]: string
+  }
   quorum: number, // quorum is between 0.01 and 0.99
   support: number, // between 0.01-0.99, how much % yays for a proposal to be approved
   voteLength: number, // How many blocks to leave a proposal open
@@ -72,7 +75,21 @@ Holders are able to transfer them to someone else on Arweave, not only to other 
 `{ state }`
 
 ### Balance
-Check the current balance of an account.
+Check the current total balance (unlocked and in vault) of an account.
+
+#### Optional:
+- **target**: To whom check the balance. If not provided, caller is used.
+
+#### Returns:
+```
+result: {
+    target: address,
+    balance: target's balance
+}
+```
+
+### UnlockedBalance
+Check the current unlocked balance of an account.
 
 #### Optional:
 - **target**: To whom check the balance. If not provided, caller is used.
@@ -153,6 +170,14 @@ Holders are able to propose a new vote, this will create a new proposal.
   To send a general non-fixed proposal. A yes/no question.
   Requires:
   - **note**: Proposal description
+
+Allowed keys to be set are:
+- quorum
+- support
+- lockMinLength
+- lockMaxLength
+- role
+  - role value must be: `{target: address, role: 'name'}`
 
 #### Returns:
 `{ state }`
