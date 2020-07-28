@@ -340,7 +340,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       return { state };
     }
 
-    if ((vote.nays !== 0 && (vote.yays / vote.nays) > support) || (vote.yays !== 0)) {
+    if ((vote.yays !== 0) && (vote.nays === 0 || (vote.yays / vote.nays) > support)) {
       vote.status = 'passed';
 
       if (vote.type === 'mint') {
