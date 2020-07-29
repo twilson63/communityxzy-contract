@@ -1,4 +1,5 @@
 export interface StateInterface {
+  name: string;
   ticker: string;
   balances: BalancesInterface;
   vault: VaultInterface;

@@ -7,6 +7,7 @@ DAO Garden is a DAO UI and library (in Javascript), to create new DAOs on top of
 The DAO state has the following structure:
 ```typescript
 {
+  name: string,
   ticker: string,
   balances: {
     [key: string]: number // Positive integer
@@ -33,6 +34,7 @@ The DAO state has the following structure:
 Here's an example of what the state when creating the contract should look like:
 ```json
 {
+  "name": "My DAO Name",
   "ticker": "TICK",
   "balances": {
     "uhE-QeYS8i4pmUtnxQyHD7dzXFNaJ9oMK-IM-QPNY6M": 10000000
