@@ -38,15 +38,16 @@ export interface ActionInterface {
 export interface InputInterface extends VoteInterface {
   function: 'transfer' | 'balance' | 'unlockedBalance' | 'vote' | 'propose' | 'finalize' | 'lock' | 'increaseVault' | 'unlock' | 'vaultBalance' | 'role';
   target?: string;
-  id?: string;
   cast?: string;
 }
 
 export interface VoteInterface {
   status?: 'active' | 'quorumFailed' | 'passed' | 'failed';
-  type?: 'mint' | 'mintLocked' | 'indicative' | 'set';
+  type?: 'mint' | 'mintLocked' | 'burnVault' | 'indicative' | 'set';
+  id?: number;
   totalWeight?: number;
   recipient?: string;
+  target?: string;
   qty?: number;
   key?: string;
   value?: any;

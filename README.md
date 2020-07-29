@@ -53,18 +53,20 @@ Here's an example of what the state when creating the contract should look like:
 ```typescript
 interface VoteInterface {
   status?: 'active' | 'quorumFailed' | 'passed' | 'failed';
-  type?: 'mint' | 'mintLocked' | 'indicative' | 'set';
+  type?: 'mint' | 'mintLocked' | 'burnVault' | 'indicative' | 'set';
+  id?: number;
+  totalWeight?: number;
   recipient?: string;
+  target?: string;
   qty?: number;
   key?: string;
-  value?: string;
+  value?: any;
   note?: string;
   yays?: number;
   nays?: number;
   voted?: string[];
   start?: number;
   lockLength?: number;
-  totalWeight?: number;
 }
 ```
 
@@ -164,6 +166,10 @@ Holders are able to propose a new vote, this will create a new proposal.
   - **qty**: Amount of tokens to mint
   - **note**: Proposal description
   - **lockLength**: How many blocks *qty* will be locked.
+- **BurnVault**
+  To burn a vault with it's tokens. Warning: This will completely remove the tokens and it's vault, use with caution.
+  - **target**: Arweave address target
+  - **id**: Vault ID (index) to be burned.
 - **Set**
   To update the DAO settings.
   Requires:

@@ -254,6 +254,23 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       }, lockLength);
 
       votes.push(vote);
+    } else if(voteType === 'burnVault') {
+      const target: string = input.target;
+      const id: number = input.id;
+
+      if(!target || typeof target !== 'string') {
+        throw new ContractError('Target is required.');
+      }
+
+      if(isNaN(id) || !Number.isInteger(id) || id < 0 || !(target in vault) || !vault[target][id]) {
+        throw new ContractError('Invalid vault ID.');
+      }
+
+      Object.assign(vote, {
+        target,
+        id
+      });
+
     } else if (voteType === 'set') {
       if (typeof input.key !== "string") {
         throw new ContractError('Data type of key not supported.');
@@ -343,9 +360,13 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
   /** Finalize Function */
   if (input.function === 'finalize') {
-    const id: string = input.id;
+    const id = input.id;
     const vote: VoteInterface = votes[id];
     const qty: number = vote.qty;
+
+    if(!vote) {
+      throw new ContractError('This vote doesn\'t exists.');
+    }
 
     if (SmartWeave.block.height < (vote.start + voteLength)) {
       throw new ContractError('Vote has not yet concluded.');
@@ -389,6 +410,12 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
         } else {
           // New locked account
           vault[vote.recipient] = [locked];
+        }
+      } else if(vote.type === 'burnVault') {
+        if((vote.target in vault) && vault[vote.target][vote.id]) {
+          state.vault[vote.target].splice(vote.id, 1);
+        } else {
+          vote.status = 'failed';
         }
       } else if (vote.type === 'set') {
         if(vote.key === 'role') {
