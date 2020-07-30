@@ -14,6 +14,7 @@
   "votes": [],
   "roles": {},
   "quorum": 0.5,
+  "support": 0.5,
   "voteLength": 2000,
   "lockMinLength": 5,
   "lockMaxLength": 10000
