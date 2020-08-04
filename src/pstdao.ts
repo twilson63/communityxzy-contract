@@ -256,19 +256,13 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       votes.push(vote);
     } else if(voteType === 'burnVault') {
       const target: string = input.target;
-      const id: number = input.id;
 
       if(!target || typeof target !== 'string') {
         throw new ContractError('Target is required.');
       }
 
-      if(isNaN(id) || !Number.isInteger(id) || id < 0 || !(target in vault) || !vault[target][id]) {
-        throw new ContractError('Invalid vault ID.');
-      }
-
       Object.assign(vote, {
-        target,
-        id
+        target
       });
 
     } else if (voteType === 'set') {
@@ -424,7 +418,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
         }
       } else if(vote.type === 'burnVault') {
         if((vote.target in vault) && vault[vote.target][vote.id]) {
-          state.vault[vote.target].splice(vote.id, 1);
+          state.vault[vote.target] = [];
         } else {
           vote.status = 'failed';
         }
