@@ -276,7 +276,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
         throw new ContractError('Data type of key not supported.');
       }
 
-      // TODO: Add validators
+      // Add validators
       if(input.key === 'quorum') {
         if(isNaN(input.value) || input.value < 0.01 || input.value > 0.99) {
           throw new ContractError('Quorum must be between 0.01 and 0.99.');
@@ -293,15 +293,26 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
         if(!(Number.isInteger(input.value)) || input.value <= state.lockMinLength) {
           throw new ContractError('lockMaxLength cannot be less than or equal to lockMinLength.');
         }
-      } else if(input.key === 'ticker' || input.key === 'balances' || input.key === 'vault' || input.key === 'votes' || input.key === 'roles' || input.key === 'voteLength') {
-        // Reject other keys changes
-        throw new ContractError('This DAO option cannot be changed.');
       }
 
-      Object.assign(vote, {
-        'key': input.key,
-        'value': input.value
-      });
+      if(input.key === 'role') {
+        const recipient = input.recipient;
+
+        if (!recipient) {
+          throw new ContractError('No recipient specified');
+        }
+
+        Object.assign(vote, {
+          key: input.key,
+          value: input.value,
+          recipient
+        });
+      } else {
+        Object.assign(vote, {
+          'key': input.key,
+          'value': input.value
+        });
+      }
       
       votes.push(vote);
     } else if (voteType === 'indicative') {
@@ -419,7 +430,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
         }
       } else if (vote.type === 'set') {
         if(vote.key === 'role') {
-          state.roles[vote.value.target] = vote.value.role;
+          state.roles[vote.recipient] = vote.value;
         } else {
           state[vote.key] = vote.value;
         }
