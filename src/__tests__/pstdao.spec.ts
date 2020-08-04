@@ -387,28 +387,30 @@ describe('Propose a vote', () => {
       function: func,
       type: 'set',
       key: 'role',
-      value: {target: addresses.admin, role: 'MAIN'},
+      recipient: addresses.admin,
+      value: 'MAIN',
       note: 'Set a role MAIN to main addy'
     }, caller: addresses.admin});
 
-    expect(state.votes[(state.votes.length - 1)].value).toEqual({
-      target: addresses.admin,
-      role: 'MAIN'
-    });
+    expect(state.votes[(state.votes.length - 1)].value).toEqual('MAIN');
   });
 
   it('should create a set proposal for a custom field', () => {
     let voteLength = state.votes.length;
 
-    handler(state, {input: {
-      function: func,
-      type: 'set',
-      key: 'customKey',
-      value: ['custom', 'value'],
-      note: 'This is my custom field note.'
-    }, caller: addresses.admin});
+    try {
+      handler(state, {input: {
+        function: func,
+        type: 'set',
+        key: 'customKey',
+        value: ['custom', 'value'],
+        note: 'This is my custom field note.'
+      }, caller: addresses.admin});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
 
-    expect(state.votes.length).toBe(voteLength+1);
+    expect(state.votes.length).toBe(voteLength);
   });
 });
 
@@ -581,7 +583,8 @@ describe('Finalize votes', () => {
       function: 'propose', 
       type: 'set', 
       key: 'role',
-      value: {target: addresses.admin, role: 'MAIN'},
+      recipient: addresses.admin,
+      value: 'MAIN',
       note: 'role'
     }, caller: addresses.user});
 

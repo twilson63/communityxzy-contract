@@ -270,7 +270,12 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
         throw new ContractError('Data type of key not supported.');
       }
 
-      // Add validators
+      // Validators
+      const whitelist_keys = ['quorum', 'support', 'lockMinLength', 'lockMaxLength', 'role'];
+      if (!whitelist_keys.includes(input.key)) {
+        throw new ContractError('Data type of key "' + input.key + '" not allowed.')
+      }
+
       if(input.key === 'quorum') {
         if(isNaN(input.value) || input.value < 0.01 || input.value > 0.99) {
           throw new ContractError('Quorum must be between 0.01 and 0.99.');
