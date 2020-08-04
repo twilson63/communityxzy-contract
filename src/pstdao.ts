@@ -110,7 +110,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     }
 
     balances[caller] -= qty;
-    const start = SmartWeave.block.height;
+    const start = +SmartWeave.block.height;
     const end = start + lockLength;
 
     if (caller in vault) {
@@ -147,7 +147,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       throw new ContractError('Caller does not have a vault.');
     }
 
-    vault[caller][id].end = (SmartWeave.block.height + lockLength);
+    vault[caller][id].end = (+SmartWeave.block.height + lockLength);
 
     return { state };
   }
@@ -159,7 +159,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       let i = vault[caller].length;
       while(i--) {
         const locked = vault[caller][i];
-        if(SmartWeave.block.height >= locked.end) {
+        if(+SmartWeave.block.height >= locked.end) {
           // Unlock
           balances[caller] += locked.balance;
           vault[caller].splice(i, 1);
@@ -176,7 +176,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     let balance = 0;
 
     if(target in vault) {
-      const blockHeight = SmartWeave.block.height;
+      const blockHeight = +SmartWeave.block.height;
       const filtered = vault[target].filter(a => {
         return (blockHeight < (a.start + a.end));
       });
@@ -223,7 +223,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       yays: 0,
       nays: 0,
       voted: [],
-      start: SmartWeave.block.height,
+      start: +SmartWeave.block.height,
       totalWeight
     };
 
@@ -342,7 +342,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       throw new ContractError('Caller has already voted.');
     }
 
-    if (SmartWeave.block.height >= (vote.start + voteLength)) {
+    if (+SmartWeave.block.height >= (vote.start + voteLength)) {
       throw new ContractError('Vote has already concluded.');
     }
 
@@ -368,7 +368,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       throw new ContractError('This vote doesn\'t exists.');
     }
 
-    if (SmartWeave.block.height < (vote.start + voteLength)) {
+    if (+SmartWeave.block.height < (vote.start + voteLength)) {
       throw new ContractError('Vote has not yet concluded.');
     }
 
@@ -395,7 +395,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
         }
 
       } else if(vote.type === 'mintLocked') {
-        const start = SmartWeave.block.height;
+        const start = +SmartWeave.block.height;
         const end = start + vote.lockLength;
 
         const locked: VaultParamsInterface = {
