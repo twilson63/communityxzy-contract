@@ -427,7 +427,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
           vault[vote.recipient] = [locked];
         }
       } else if(vote.type === 'burnVault') {
-        if((vote.target in vault) && vault[vote.target][vote.id]) {
+        if(vote.target in vault) {
           state.vault[vote.target] = [];
         } else {
           vote.status = 'failed';
