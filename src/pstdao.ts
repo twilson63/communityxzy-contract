@@ -265,6 +265,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
         target
       });
 
+      votes.push(vote);
     } else if (voteType === 'set') {
       if (typeof input.key !== "string") {
         throw new ContractError('Data type of key not supported.');
