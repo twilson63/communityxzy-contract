@@ -229,7 +229,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
     if (voteType === 'mint' || voteType === 'mintLocked') {
       const recipient = input.recipient;
-      const qty = input.qty;
+      const qty = +input.qty;
 
       if (!recipient) {
         throw new ContractError('No recipient specified');
@@ -275,6 +275,10 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       const whitelist_keys = ['quorum', 'support', 'lockMinLength', 'lockMaxLength', 'role'];
       if (!whitelist_keys.includes(input.key)) {
         throw new ContractError('Data type of key "' + input.key + '" not allowed.')
+      }
+
+      if(input.key === 'quorum' || input.key === 'support' || input.key === 'lockMinLength' || input.key === 'lockMaxLength') {
+        input.value = +input.value;
       }
 
       if(input.key === 'quorum') {
