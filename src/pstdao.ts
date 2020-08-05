@@ -428,7 +428,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
         }
       } else if(vote.type === 'burnVault') {
         if(vote.target in vault) {
-          state.vault[vote.target] = [];
+          delete vault[vote.target];
         } else {
           vote.status = 'failed';
         }
