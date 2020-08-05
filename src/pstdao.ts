@@ -199,7 +199,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     }
 
     if(!(caller in vault)) {
-      throw new ContractError('caller need to have locked balances.');
+      throw new ContractError('Caller needs to have locked balances.');
     }
     
     const hasBalance = (vault[caller] && !!vault[caller].filter(a => a.balance > 0).length);
