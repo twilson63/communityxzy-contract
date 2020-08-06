@@ -410,7 +410,7 @@ describe('Propose a vote', () => {
       expect(err.name).toBe('ContractError');
     }
 
-    expect(state.votes.length).toBe(voteLength);
+    expect(state.votes.length).toBe(voteLength+1);
   });
 });
 

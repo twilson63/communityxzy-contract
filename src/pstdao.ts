@@ -4,15 +4,12 @@ declare const ContractError: any;
 declare const SmartWeave: any;
 
 export function handle(state: StateInterface, action: ActionInterface): { state: StateInterface } | { result: any } {
-
+  const settings: Map<string, any> = new Map(state.settings);
   const balances: BalancesInterface = state.balances;
   const vault: VaultInterface = state.vault;
   const votes: VoteInterface[] = state.votes;
   const input: InputInterface = action.input;
   const caller: string = action.caller;
-  const voteLength: number = state.voteLength;
-  const quorum: number = state.quorum;
-  const support: number = state.support;
 
   /** Transfer Function */
   if (input.function === 'transfer') {
@@ -65,8 +62,10 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     if (target in balances) {
       balance = balances[target];
     }
-    if(target in vault) {
-      balance += vault[target].map(a => a.balance).reduce((a, b) => a + b, 0);
+    if(target in vault && vault[target].length) {
+      try {
+        balance += vault[target].map(a => a.balance).reduce((a, b) => a + b, 0);
+      } catch(e) {}
     }
 
     return { result: { target, balance } };
@@ -100,8 +99,8 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       throw new ContractError('Quantity must be a positive integer.');
     }
 
-    if(!Number.isInteger(lockLength) || lockLength < state.lockMinLength || lockLength > state.lockMaxLength) {
-      throw new ContractError(`lockLength is out of range. lockLength must be between ${state.lockMinLength} - ${state.lockMaxLength}.`);
+    if(!Number.isInteger(lockLength) || lockLength < settings.get('lockMinLength') || lockLength > settings.get('lockMaxLength')) {
+      throw new ContractError(`lockLength is out of range. lockLength must be between ${settings.get('lockMinLength')} - ${settings.get('lockMaxLength')}.`);
     }
 
     const balance = balances[caller];
@@ -135,8 +134,8 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   if(input.function === 'increaseVault') {
     const lockLength = input.lockLength;
     const id = input.id;
-    if(!Number.isInteger(lockLength) || lockLength < state.lockMinLength || lockLength > state.lockMaxLength) {
-      throw new ContractError(`lockLength is out of range. lockLength must be between ${state.lockMinLength} - ${state.lockMaxLength}.`);
+    if(!Number.isInteger(lockLength) || lockLength < settings.get('lockMinLength') || lockLength > settings.get('lockMaxLength')) {
+      throw new ContractError(`lockLength is out of range. lockLength must be between ${settings.get('lockMinLength')} - ${settings.get('lockMaxLength')}.`);
     }
 
     if(caller in vault) {
@@ -155,7 +154,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   /** Unlock Function */
   if(input.function === 'unlock') {
     // After the time has passed for locked tokens, unlock them calling this function.
-    if(caller in vault) {
+    if(caller in vault && vault[caller].length) {
       let i = vault[caller].length;
       while(i--) {
         const locked = vault[caller][i];
@@ -241,8 +240,8 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
       let lockLength = {};
       if(input.lockLength) {
-        if(!Number.isInteger(input.lockLength) || input.lockLength < state.lockMinLength || input.lockLength > state.lockMaxLength) {
-          throw new ContractError(`lockLength is out of range. lockLength must be between ${state.lockMinLength} - ${state.lockMaxLength}.`);
+        if(!Number.isInteger(input.lockLength) || input.lockLength < settings.get('lockMinLength') || input.lockLength > settings.get('lockMaxLength')) {
+          throw new ContractError(`lockLength is out of range. lockLength must be between ${settings.get('lockMinLength')} - ${settings.get('lockMaxLength')}.`);
         }
 
         lockLength = { lockLength: input.lockLength };
@@ -272,11 +271,6 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       }
 
       // Validators
-      const whitelist_keys = ['quorum', 'support', 'lockMinLength', 'lockMaxLength', 'role'];
-      if (!whitelist_keys.includes(input.key)) {
-        throw new ContractError('Data type of key "' + input.key + '" not allowed.')
-      }
-
       if(input.key === 'quorum' || input.key === 'support' || input.key === 'lockMinLength' || input.key === 'lockMaxLength') {
         input.value = +input.value;
       }
@@ -290,11 +284,11 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
           throw new ContractError('Support must be between 0.01 and 0.99.');
         }
       } else if(input.key === 'lockMinLength') {
-        if(!(Number.isInteger(input.value)) || input.value < 1 || input.value >= state.lockMaxLength) {
+        if(!(Number.isInteger(input.value)) || input.value < 1 || input.value >= settings.get('lockMaxLength')) {
           throw new ContractError('lockMinLength cannot be less than 1 and cannot be equal or greater than lockMaxLength.');
         }
       } else if(input.key === 'lockMaxLength') {
-        if(!(Number.isInteger(input.value)) || input.value <= state.lockMinLength) {
+        if(!(Number.isInteger(input.value)) || input.value <= settings.get('lockMinLength')) {
           throw new ContractError('lockMaxLength cannot be less than or equal to lockMinLength.');
         }
       }
@@ -357,7 +351,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       throw new ContractError('Caller has already voted.');
     }
 
-    if (+SmartWeave.block.height >= (vote.start + voteLength)) {
+    if (+SmartWeave.block.height >= (vote.start + settings.get('voteLength'))) {
       throw new ContractError('Vote has already concluded.');
     }
 
@@ -383,7 +377,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       throw new ContractError('This vote doesn\'t exists.');
     }
 
-    if (+SmartWeave.block.height < (vote.start + voteLength)) {
+    if (+SmartWeave.block.height < (vote.start + settings.get('voteLength'))) {
       throw new ContractError('Vote has not yet concluded.');
     }
 
@@ -392,12 +386,12 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     }
 
     // Check this total supply and quorum.
-    if((vote.totalWeight * quorum) > (vote.yays + vote.nays)) {
+    if((vote.totalWeight * settings.get('quorum')) > (vote.yays + vote.nays)) {
       vote.status = 'quorumFailed';
       return { state };
     }
 
-    if ((vote.yays !== 0) && (vote.nays === 0 || (vote.yays / vote.nays) > support)) {
+    if ((vote.yays !== 0) && (vote.nays === 0 || (vote.yays / vote.nays) > settings.get('support'))) {
       vote.status = 'passed';
 
       if (vote.type === 'mint') {
@@ -436,7 +430,8 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
         if(vote.key === 'role') {
           state.roles[vote.recipient] = vote.value;
         } else {
-          state[vote.key] = vote.value;
+          settings.set(vote.key, vote.value);
+          state.settings = Array.from(settings);
         }
       }
 
