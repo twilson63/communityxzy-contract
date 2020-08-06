@@ -160,7 +160,12 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
         const locked = vault[caller][i];
         if(+SmartWeave.block.height >= locked.end) {
           // Unlock
-          balances[caller] += locked.balance;
+          if(caller in balances && typeof balances[caller] === 'number') {
+            balances[caller] += locked.balance;
+          } else {
+            balances[caller] = locked.balance;
+          }
+          
           vault[caller].splice(i, 1);
         }
       }
