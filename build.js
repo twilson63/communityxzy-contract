@@ -3,7 +3,7 @@ const glob = require('glob');
 const fs = require('fs');
 
 build({
-  entryPoints: ['./src/pstdao.ts'],
+  entryPoints: ['./src/contract.ts'],
   outdir: './dist',
   minify: false,
   bundle: false
