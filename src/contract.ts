@@ -182,7 +182,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     if(target in vault) {
       const blockHeight = +SmartWeave.block.height;
       const filtered = vault[target].filter(a => {
-        return (blockHeight < (a.start + a.end));
+        return (blockHeight < (a.end - a.start));
       });
 
       for(let i = 0, j = filtered.length; i < j; i++) {
@@ -241,6 +241,23 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
       if (!Number.isInteger(qty) || qty <= 0) {
         throw new ContractError('Invalid value for "qty". Must be a positive integer.');
+      }
+
+      let totalSupply = 0;
+      const vaultValues = Object.values(vault);
+      for (let i = 0, j = vaultValues.length; i < j; i++) {
+        const locked = vaultValues[i];
+        for (let j = 0, k = locked.length; j < k; j++) {
+          totalSupply += locked[j].balance;
+        }
+      }
+      const balancesValues = Object.values(balances);
+      for (let i = 0, j = balancesValues.length; i < j; i++) {
+        totalSupply += balancesValues[i];
+      }
+
+      if (totalSupply + qty > Number.MAX_SAFE_INTEGER) {
+        throw new ContractError('Quantity too large.');
       }
 
       let lockLength = {};
@@ -398,6 +415,25 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
     if ((vote.yays !== 0) && (vote.nays === 0 || (vote.yays / vote.nays) > settings.get('support'))) {
       vote.status = 'passed';
+
+      if (vote.type === 'mint' || vote.type === 'mintLocked') {
+        let totalSupply = 0;
+        const vaultValues = Object.values(vault);
+        for (let i = 0, j = vaultValues.length; i < j; i++) {
+          const locked = vaultValues[i];
+          for (let j = 0, k = locked.length; j < k; j++) {
+            totalSupply += locked[j].balance;
+          }
+        }
+        const balancesValues = Object.values(balances);
+        for (let i = 0, j = balancesValues.length; i < j; i++) {
+          totalSupply += balancesValues[i];
+        }
+
+        if (totalSupply + qty > Number.MAX_SAFE_INTEGER) {
+          throw new ContractError('Quantity too large.');
+        }
+      }
 
       if (vote.type === 'mint') {
         if (vote.recipient in balances) {

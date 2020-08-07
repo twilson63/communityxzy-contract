@@ -9,8 +9,8 @@ const arweave = Arweave.init({
   port: 443
 });
 
-const { handle } = require('../pstdao.ts');
-let state = JSON.parse(fs.readFileSync('./src/pstdao.json', 'utf8'));
+const { handle } = require('../contract.ts');
+let state = JSON.parse(fs.readFileSync('./src/contract.json', 'utf8'));
 
 let { handler, swGlobal } = createContractExecutionEnvironment(arweave, handle.toString(), 'bYz5YKzHH97983nS8UWtqjrlhBHekyy-kvHt_eBxBBY');
 
@@ -328,6 +328,24 @@ describe('Propose a vote', () => {
       qty: 100,
       note: 'Mint 100'
     }, caller: addresses.admin });
+
+    expect(state.votes.length).toBe(1);
+  });
+
+  it('should fail to create a mint proposal because of quantity', () => {
+    try {
+      handler(state, {
+        input: {
+          function: func,
+          type: 'mint',
+          recipient: addresses.user,
+          qty: Number.MAX_SAFE_INTEGER + 100,
+          note: 'Mint too much'
+        }, caller: addresses.admin
+      });
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
 
     expect(state.votes.length).toBe(1);
   });
