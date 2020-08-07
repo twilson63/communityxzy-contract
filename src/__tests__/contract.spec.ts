@@ -9,8 +9,8 @@ const arweave = Arweave.init({
   port: 443
 });
 
-const { handle } = require('../pstdao.ts');
-let state = JSON.parse(fs.readFileSync('./src/pstdao.json', 'utf8'));
+const { handle } = require('../contract.ts');
+let state = JSON.parse(fs.readFileSync('./src/contract.json', 'utf8'));
 
 let { handler, swGlobal } = createContractExecutionEnvironment(arweave, handle.toString(), 'bYz5YKzHH97983nS8UWtqjrlhBHekyy-kvHt_eBxBBY');
 
@@ -332,6 +332,24 @@ describe('Propose a vote', () => {
     expect(state.votes.length).toBe(1);
   });
 
+  it('should fail to create a mint proposal because of quantity', () => {
+    try {
+      handler(state, {
+        input: {
+          function: func,
+          type: 'mint',
+          recipient: addresses.user,
+          qty: Number.MAX_SAFE_INTEGER + 100,
+          note: 'Mint too much'
+        }, caller: addresses.admin
+      });
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+
+    expect(state.votes.length).toBe(1);
+  });
+
   it('should create a mintLocked proposal', () => {
     handler(state, { input: {
       function: func,
@@ -387,26 +405,28 @@ describe('Propose a vote', () => {
       function: func,
       type: 'set',
       key: 'role',
-      value: {target: addresses.admin, role: 'MAIN'},
+      recipient: addresses.admin,
+      value: 'MAIN',
       note: 'Set a role MAIN to main addy'
     }, caller: addresses.admin});
 
-    expect(state.votes[(state.votes.length - 1)].value).toEqual({
-      target: addresses.admin,
-      role: 'MAIN'
-    });
+    expect(state.votes[(state.votes.length - 1)].value).toEqual('MAIN');
   });
 
   it('should create a set proposal for a custom field', () => {
     let voteLength = state.votes.length;
 
-    handler(state, {input: {
-      function: func,
-      type: 'set',
-      key: 'customKey',
-      value: ['custom', 'value'],
-      note: 'This is my custom field note.'
-    }, caller: addresses.admin});
+    try {
+      handler(state, {input: {
+        function: func,
+        type: 'set',
+        key: 'customKey',
+        value: ['custom', 'value'],
+        note: 'This is my custom field note.'
+      }, caller: addresses.admin});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
 
     expect(state.votes.length).toBe(voteLength+1);
   });
@@ -581,7 +601,8 @@ describe('Finalize votes', () => {
       function: 'propose', 
       type: 'set', 
       key: 'role',
-      value: {target: addresses.admin, role: 'MAIN'},
+      recipient: addresses.admin,
+      value: 'MAIN',
       note: 'role'
     }, caller: addresses.user});
 

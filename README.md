@@ -1,10 +1,11 @@
-# DAO Garden SmartWeave Specs
+# Community Contract Specs
 
-DAO Garden is a DAO UI and library (in Javascript), to create new DAOs on top of the DAO SmartWeave contract, these are the contract's specs.
+Community is a frontend, library (in Javascript) and a SmartWeave contract, to create new new communities completely decentralized. 
+These are the contract's specs.
 
-**Holders** = DAO Token Holders.
+**Holders** = Community token holders/participants.
 
-The DAO state has the following structure:
+The community state has the following default structure:
 ```typescript
 {
   name: string,
@@ -22,30 +23,34 @@ The DAO state has the following structure:
   votes: VoteInterface[], 
   roles: {
       [key: string]: string
-  }
-  quorum: number, // quorum is between 0.01 and 0.99
-  support: number, // between 0.01-0.99, how much % yays for a proposal to be approved
-  voteLength: number, // How many blocks to leave a proposal open
-  lockMinLength: number, // Minimum lockLength allowed
-  lockMaxLength: number // Maximum lockLength allowed
+  },
+  settings: [ // Array of a Map<string, any>
+      ["quorum", number], // quorum is between 0.01 and 0.99
+      ["support", number], // between 0.01-0.99, how much % yays for a proposal to be approved
+      ["voteLength", number], // How many blocks to leave a proposal open
+      ["lockMinLength", number], // Minimum lockLength allowed
+      ["lockMaxLength", number] // Maximum lockLength allowed
+  ]
 }
 ```
 
 Here's an example of what the state when creating the contract should look like:
 ```json
 {
-  "name": "My DAO Name",
-  "ticker": "TICK",
+  "name": "Community",
+  "ticker": "COMM",
   "balances": {
-    "uhE-QeYS8i4pmUtnxQyHD7dzXFNaJ9oMK-IM-QPNY6M": 10000000
+    "BPr7vrFduuQqqVMu_tftxsScTKUq9ke0rx4q5C9ieQU": 10000000
   },
   "vault": {},
   "votes": [],
   "roles": {},
-  "quorum": 0.5,
-  "voteLength": 2000,
-  "lockMinLength": 100,
-  "lockMaxLength": 10000
+  "settings": [
+      ["quorum", 0.5],
+      ["voteLength", 2000],
+      ["lockMinLength", 100],
+      ["lockMaxLength", 10000]
+  ]
 }
 ```
 
@@ -167,9 +172,8 @@ Holders are able to propose a new vote, this will create a new proposal.
   - **note**: Proposal description
   - **lockLength**: How many blocks *qty* will be locked.
 - **BurnVault**
-  To burn a vault with it's tokens. Warning: This will completely remove the tokens and it's vault, use with caution.
+  To burn a vault with it's tokens. Warning: This will completely remove all the tokens stored on the target's vault.
   - **target**: Arweave address target
-  - **id**: Vault ID (index) to be burned.
 - **Set**
   To update the DAO settings.
   Requires:
@@ -180,13 +184,14 @@ Holders are able to propose a new vote, this will create a new proposal.
   Requires:
   - **note**: Proposal description
 
-Allowed keys to be set are:
+Allowed keys for **set** are:
 - quorum
 - support
 - lockMinLength
 - lockMaxLength
 - role
   - role value must be: `{target: address, role: 'name'}`
+- Custom Key/Value pairs
 
 #### Returns:
 `{ state }`
