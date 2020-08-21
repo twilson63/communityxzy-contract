@@ -181,9 +181,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
     if(target in vault) {
       const blockHeight = +SmartWeave.block.height;
-      const filtered = vault[target].filter(a => {
-        return (blockHeight < (a.end - a.start));
-      });
+      const filtered = vault[target].filter(a => blockHeight < a.end);
 
       for(let i = 0, j = filtered.length; i < j; i++) {
         balance += filtered[i].balance;
