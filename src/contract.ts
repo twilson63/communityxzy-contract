@@ -146,6 +146,10 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       throw new ContractError('Caller does not have a vault.');
     }
 
+    if(+SmartWeave.block.height >= vault[caller][id].end) {
+      throw new ContractError('This vault has ended.');
+    }
+
     vault[caller][id].end = (+SmartWeave.block.height + lockLength);
 
     return { state };
