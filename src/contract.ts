@@ -6,7 +6,7 @@ import {
   InputInterface,
   VaultInterface,
   VaultParamsInterface,
-  ModuleInterface
+  ExtensionInterface
 } from "./faces";
 
 declare const ContractError: any;
@@ -17,15 +17,15 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   const balances: BalancesInterface = state.balances;
   const vault: VaultInterface = state.vault;
   const votes: VoteInterface[] = state.votes;
+  const extensions: ExtensionInterface[] = state.extensions;
   const input: InputInterface = action.input;
   const caller: string = action.caller;
-  const modules: ModuleInterface[] = state.modules;
 
-  // Sort modules by ascending order of priotity weight, before calling them.
-  modules.sort((modA, modB) => modB.priorityWeight - modA.priorityWeight);
+  // Sort extensions by ascending order of priority weight, before calling them.
+  extensions.sort((modA, modB) => modB.priorityWeight - modA.priorityWeight);
 
-  for (let mod of modules) {
-    state = mod.call({state, action});
+  for (let extension of extensions) {
+    state = extension.call({state, action});
   }
 
   /** Transfer Function */
@@ -512,6 +512,14 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     }
 
     return { result: { target, role } };
+  }
+
+  if (input.function === 'extend') {
+    const extension = input.extension;
+
+    extensions.push(extension);
+
+    return { state };
   }
 
   throw new ContractError(`No function supplied or function not recognised: "${input.function}"`);
