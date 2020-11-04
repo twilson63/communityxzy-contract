@@ -6,7 +6,7 @@ export interface StateInterface {
   votes: VoteInterface[];
   roles: RoleInterface;
   settings: [string, any][];
-  modules: ModuleInterface[];
+  extensions: ExtensionInterface[];
 }
 
 export interface RoleInterface {
@@ -32,7 +32,9 @@ export interface ActionInterface {
   caller: string;
 }
 
-export interface ModuleInterface {
+// Allows the developer to extend the contract in any custom way, by passing
+// state and action to a given `call` method.
+export interface ExtensionInterface {
   // Ideally, a unique, meaningful id for the module.
   id: string;
   // Priority weight of this module against other modules when running sequentially.
@@ -41,7 +43,12 @@ export interface ModuleInterface {
   call({state: StateInterface, action: ActionInterface}): StateInterface;
 }
 
-export interface InputInterface extends VoteInterface {
+// Allows the contract to call `extend` and provide an extension.
+export interface ExtendInterface {
+  extension?: ExtensionInterface;
+}
+
+export interface InputInterface extends VoteInterface, ExtendInterface {
   function: GetFunctionType | SetFunctionType;
   cast?: string;
 }
@@ -73,4 +80,4 @@ export interface ResultInterface {
 export type VoteStatus = 'active' | 'quorumFailed' | 'passed' | 'failed';
 export type VoteType = 'mint' | 'mintLocked' | 'burnVault' | 'indicative' | 'set';
 export type GetFunctionType = 'balance' | 'unlockedBalance' | 'vaultBalance' | 'role';
-export type SetFunctionType = 'transfer' | 'vote' | 'propose' | 'finalize' | 'lock' | 'increaseVault' | 'unlock';
+export type SetFunctionType = 'transfer' | 'vote' | 'propose' | 'finalize' | 'lock' | 'increaseVault' | 'unlock' | 'extend';
