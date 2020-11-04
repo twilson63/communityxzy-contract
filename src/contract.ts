@@ -21,6 +21,9 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   const caller: string = action.caller;
   const modules: ModuleInterface[] = state.modules;
 
+  // Sort modules by ascending order of priotity weight, before calling them.
+  modules.sort((modA, modB) => modB.priorityWeight - modA.priorityWeight);
+
   for (let mod of modules) {
     state = mod.call({state, action});
   }
