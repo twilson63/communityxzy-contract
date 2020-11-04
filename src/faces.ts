@@ -33,6 +33,11 @@ export interface ActionInterface {
 }
 
 export interface ModuleInterface {
+  // Ideally, a unique, meaningful id for the module.
+  id: string;
+  // Priority weight of this module against other modules when running sequentially.
+  priorityWeight?: number;
+  // A function that runs whenever the contract is handled.
   call({state: StateInterface, action: ActionInterface}): StateInterface;
 }
 
