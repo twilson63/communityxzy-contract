@@ -6,6 +6,7 @@ export interface StateInterface {
   votes: VoteInterface[];
   roles: RoleInterface;
   settings: [string, any][];
+  modules: ModuleInterface[];
 }
 
 export interface RoleInterface {
@@ -29,6 +30,10 @@ export interface VaultParamsInterface {
 export interface ActionInterface {
   input: InputInterface;
   caller: string;
+}
+
+export interface ModuleInterface {
+  call({state: StateInterface, action: ActionInterface}): StateInterface;
 }
 
 export interface InputInterface extends VoteInterface {
