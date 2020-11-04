@@ -21,13 +21,6 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   const input: InputInterface = action.input;
   const caller: string = action.caller;
 
-  // Sort extensions by ascending order of priority weight, before calling them.
-  extensions.sort((modA, modB) => modB.priorityWeight - modA.priorityWeight);
-
-  for (let extension of extensions) {
-    state = extension.call({state, action});
-  }
-
   /** Transfer Function */
   if (input.function === 'transfer') {
     const target = input.target;
@@ -520,6 +513,13 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     extensions.push(extension);
 
     return { state };
+  }
+
+  // Sort extensions by ascending order of priority weight, before calling them.
+  extensions.sort((modA, modB) => modB.priorityWeight - modA.priorityWeight);
+
+  for (let extension of extensions) {
+    state = extension.call({state, action});
   }
 
   throw new ContractError(`No function supplied or function not recognised: "${input.function}"`);
