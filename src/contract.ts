@@ -1,4 +1,13 @@
-import { StateInterface, ActionInterface, VoteInterface, BalancesInterface, InputInterface, VaultInterface, VaultParamsInterface } from "./faces";
+import {
+  StateInterface,
+  ActionInterface,
+  VoteInterface,
+  BalancesInterface,
+  InputInterface,
+  VaultInterface,
+  VaultParamsInterface,
+  ExtensionInterface
+} from "./faces";
 
 declare const ContractError: any;
 declare const SmartWeave: any;
@@ -8,6 +17,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   const balances: BalancesInterface = state.balances;
   const vault: VaultInterface = state.vault;
   const votes: VoteInterface[] = state.votes;
+  const extensions: ExtensionInterface[] = state.extensions;
   const input: InputInterface = action.input;
   const caller: string = action.caller;
 
@@ -53,7 +63,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   /** Balance Function */
   if (input.function === 'balance') {
     const target = input.target || caller;
-    
+
     if (typeof target !== 'string') {
       throw new ContractError('Must specificy target to get balance for.');
     }
@@ -84,7 +94,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     }
 
     let balance = balances[target];
-    
+
     return { result: { target, balance } };
   }
 
@@ -169,7 +179,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
           } else {
             balances[caller] = locked.balance;
           }
-          
+
           vault[caller].splice(i, 1);
         }
       }
@@ -207,7 +217,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     if(!(caller in vault)) {
       throw new ContractError('Caller needs to have locked balances.');
     }
-    
+
     const hasBalance = (vault[caller] && !!vault[caller].filter(a => a.balance > 0).length);
     if(!hasBalance) {
       throw new ContractError('Caller doesn\'t have any locked balance.');
@@ -270,7 +280,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
         lockLength = { lockLength: input.lockLength };
       }
-      
+
       Object.assign(vote, {
         recipient,
         qty: qty,
@@ -335,7 +345,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
           'value': input.value
         });
       }
-      
+
       votes.push(vote);
     } else if (voteType === 'indicative') {
       votes.push(vote);
@@ -495,6 +505,21 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     }
 
     return { result: { target, role } };
+  }
+
+  if (input.function === 'extend') {
+    const extension = input.extension;
+
+    extensions.push(extension);
+
+    return { state };
+  }
+
+  // Sort extensions by ascending order of priority weight, before calling them.
+  extensions.sort((modA, modB) => modB.priorityWeight - modA.priorityWeight);
+
+  for (let extension of extensions) {
+    state = extension.call({state, action});
   }
 
   throw new ContractError(`No function supplied or function not recognised: "${input.function}"`);
