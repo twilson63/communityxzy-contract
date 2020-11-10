@@ -1,6 +1,9 @@
 # Community Contract Specs
 
-Community is a frontend, library (in Javascript) and a SmartWeave contract, to create new new communities completely decentralized. 
+[![Gitopia](https://img.shields.io/endpoint?style=&url=https://gitopia.org/mirror-badge.json)](https://gitopia.org/?#/BPr7vrFduuQqqVMu_tftxsScTKUq9ke0rx4q5C9ieQU/community-contract)
+
+Community is a frontend, library (in Javascript) and a SmartWeave contract, to create new communities completely decentralized. 
+
 These are the contract's specs.
 
 **Holders** = Community token holders/participants.
@@ -76,7 +79,7 @@ interface VoteInterface {
 ```
 
 ### Transfer
-Holders are able to transfer them to someone else on Arweave, not only to other DAO members but to anyone else.
+Holders are able to transfer them to someone else on Arweave, not only to other Community members but to anyone else.
 #### Requires: 
 - **target**: To whom the balance is going to be transfered.
 - **qty**: How many tokens to transfer.
@@ -115,7 +118,7 @@ result: {
 ## Locking System
 
 ### Lock
-Lock a balance to increase it's vote weight on the DAO. The voting weight is: `lockedBalance * (end - start)`.
+Lock a balance to increase it's vote weight on the Community. The voting weight is: `lockedBalance * (end - start)`.
 
 #### Requires:
 - **qty**: Balance amount to lock.
@@ -175,7 +178,7 @@ Holders are able to propose a new vote, this will create a new proposal.
   To burn a vault with it's tokens. Warning: This will completely remove all the tokens stored on the target's vault.
   - **target**: Arweave address target
 - **Set**
-  To update the DAO settings.
+  To update the Community settings.
   Requires:
   - **key**: Setting key
   - **value**: Setting value
