@@ -23,7 +23,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
   /** Transfer Function */
   if (input.function === 'transfer') {
-    const target = input.target;
+    const target = isArweaveAddress(input.target);
     const qty = input.qty;
 
     if (!Number.isInteger(qty)) {
@@ -60,9 +60,50 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     return { state };
   }
 
+  if(input.function === 'transferLocked') {
+    const target = isArweaveAddress(input.target);
+    const qty = +input.qty;
+    const lockLength = input.lockLength;
+
+    if(!Number.isInteger(qty) || qty <= 0) {
+      throw new ContractError('Quantity must be a positive integer.');
+    }
+
+    if(!Number.isInteger(lockLength) || lockLength < settings.get('lockMinLength') || lockLength > settings.get('lockMaxLength')) {
+      throw new ContractError(`lockLength is out of range. lockLength must be between ${settings.get('lockMinLength')} - ${settings.get('lockMaxLength')}.`);
+    }
+
+    const balance = balances[caller];
+    if(isNaN(balance) || balance < qty) {
+      throw new ContractError('Not enough balance.');
+    }
+
+    balances[caller] -= qty;
+    const start = +SmartWeave.block.height;
+    const end = start + lockLength;
+
+    if (target in vault) {
+      // Wallet already exists in state, add new tokens
+      vault[target].push({
+        balance: qty,
+        end,
+        start
+      });
+    } else {
+      // Wallet is new, set starting balance
+      vault[target] = [{
+        balance: qty,
+        end,
+        start
+      }];
+    }
+
+    return { state };
+  }
+
   /** Balance Function */
   if (input.function === 'balance') {
-    const target = input.target || caller;
+    const target = isArweaveAddress(input.target || caller);
 
     if (typeof target !== 'string') {
       throw new ContractError('Must specificy target to get balance for.');
@@ -83,7 +124,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
   /** Total balance function */
   if(input.function === 'unlockedBalance') {
-    const target = input.target || caller;
+    const target = isArweaveAddress(input.target || caller);
 
     if(typeof target !== 'string') {
       throw new ContractError('Must specificy target to get balance for.');
@@ -190,7 +231,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
   /** VaultBalance Function */
   if(input.function === 'vaultBalance') {
-    const target = input.target || caller;
+    const target = isArweaveAddress(input.target || caller);
     let balance = 0;
 
     if(target in vault) {
@@ -244,7 +285,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     };
 
     if (voteType === 'mint' || voteType === 'mintLocked') {
-      const recipient = input.recipient;
+      const recipient = isArweaveAddress(input.recipient);
       const qty = +input.qty;
 
       if (!recipient) {
@@ -288,7 +329,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
       votes.push(vote);
     } else if(voteType === 'burnVault') {
-      const target: string = input.target;
+      const target: string = isArweaveAddress(input.target);
 
       if(!target || typeof target !== 'string') {
         throw new ContractError('Target is required.');
@@ -328,7 +369,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       }
 
       if(input.key === 'role') {
-        const recipient = input.recipient;
+        const recipient = isArweaveAddress(input.recipient);
 
         if (!recipient) {
           throw new ContractError('No recipient specified');
@@ -497,11 +538,11 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
   /** Roles function */
   if(input.function === 'role') {
-    const target = input.target || caller;
+    const target = isArweaveAddress(input.target || caller);
     const role = (target in state.roles)? state.roles[target] : '';
 
     if(!role.trim().length) {
-      throw new Error('Target doesn\'t have a role specified.');
+      throw new ContractError('Target doesn\'t have a role specified.');
     }
 
     return { result: { target, role } };
@@ -520,6 +561,15 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
   for (let extension of extensions) {
     state = extension.call({state, action});
+  }
+
+  function isArweaveAddress(addy: string) {
+    const address = addy.toString().trim();
+    if(!/[a-z0-9_-]{43}/i.test(address)) {
+      throw new ContractError('Invalid Arweave address.');
+    }
+
+    return address;
   }
 
   throw new ContractError(`No function supplied or function not recognised: "${input.function}"`);

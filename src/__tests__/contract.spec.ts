@@ -1,6 +1,7 @@
 require("typescript.api").register();
 import Arweave from 'arweave/node';
 import * as fs from 'fs';
+import { StateInterface } from '../faces';
 import { createContractExecutionEnvironment } from '../swglobal/contract-load';
 
 const arweave = Arweave.init({
@@ -10,7 +11,7 @@ const arweave = Arweave.init({
 });
 
 const { handle } = require('../contract.ts');
-let state = JSON.parse(fs.readFileSync('./src/contract.json', 'utf8'));
+let state: StateInterface = JSON.parse(fs.readFileSync('./src/contract.json', 'utf8'));
 
 let { handler, swGlobal } = createContractExecutionEnvironment(arweave, handle.toString(), 'bYz5YKzHH97983nS8UWtqjrlhBHekyy-kvHt_eBxBBY');
 
@@ -513,7 +514,7 @@ describe('Votes', () => {
 
     try { 
       handler(state, { input: {
-        fucntion: func,
+        function: func,
         id: 0,
         cast: 'nay'
       }, caller: addresses.user});
@@ -612,5 +613,34 @@ describe('Finalize votes', () => {
     handler(state, {input: {function: 'finalize', id: lastVoteId}, caller: addresses.user});
 
     expect(state.roles[addresses.admin]).toBe('MAIN');
+  });
+});
+
+describe('Transfer locked', () => {
+  it(`should fail with invalid address`, async () => {
+    try {
+      handler(state, {input: {
+        function: 'transferLocked',
+        target: 'u2ikdjhsoijem',
+        qty: 100,
+        lockLength: 10
+      }, caller: addresses.user});
+    } catch (err) {
+      expect(err.name).toBe('ContractError');
+    }
+
+    expect(state.vault['u2ikdjhsoijem']).toBeUndefined();
+  });
+
+  it(`should transfer locked balance`, async () => {
+    const totalVault = Object.keys(state.vault[addresses.admin]).length;
+    handler(state, {input: {
+      function: 'transferLocked',
+      target: addresses.admin,
+      qty: 100,
+      lockLength: 10
+    }, caller: addresses.user});
+
+    expect(Object.keys(state.vault[addresses.admin]).length).toBe((totalVault+1));
   });
 });
