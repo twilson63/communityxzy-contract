@@ -87,7 +87,7 @@ Holders are able to transfer them to someone else on Arweave, not only to other 
 #### Returns:
 `{ state }`
 
-### Transfer locked
+### TransferLocked
 Holders are able to transfer tokens and lock them at the same time, to someone else on Arweave.
 #### Requires:
 - **target**: To whom the balance is going to be transfered.
