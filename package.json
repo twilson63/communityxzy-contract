@@ -19,9 +19,8 @@
     "testEnvironment": "node"
   },
   "dependencies": {
-    "arweave": "^1.9.1",
-    "promises-tho": "^1.1.0",
-    "smartweave": "^0.4.10"
+    "arweave": "^1.10.14",
+    "promises-tho": "^1.1.0"
   },
   "devDependencies": {
     "@types/jest": "^26.0.15",
