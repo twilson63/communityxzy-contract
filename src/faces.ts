@@ -6,7 +6,6 @@ export interface StateInterface {
   votes: VoteInterface[];
   roles: RoleInterface;
   settings: [string, any][];
-  extensions: ExtensionInterface[];
 }
 
 export interface RoleInterface {
@@ -32,23 +31,7 @@ export interface ActionInterface {
   caller: string;
 }
 
-// Allows the developer to extend the contract in any custom way, by passing
-// state and action to a given `call` method.
-export interface ExtensionInterface {
-  // Ideally, a unique, meaningful id for the module.
-  id: string;
-  // Priority weight of this module against other modules when running sequentially.
-  priorityWeight?: number;
-  // A function that runs whenever the contract is handled.
-  call({state: StateInterface, action: ActionInterface}): StateInterface;
-}
-
-// Allows the contract to call `extend` and provide an extension.
-export interface ExtendInterface {
-  extension?: ExtensionInterface;
-}
-
-export interface InputInterface extends VoteInterface, ExtendInterface {
+export interface InputInterface extends VoteInterface {
   function: GetFunctionType | SetFunctionType;
   cast?: string;
 }
