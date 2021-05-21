@@ -61,7 +61,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   if(input.function === 'transferLocked') {
     const target = isArweaveAddress(input.target);
     const qty = +input.qty;
-    const lockLength = input.lockLength;
+    const lockLength = +input.lockLength;
 
     if(!Number.isInteger(qty) || qty <= 0) {
       throw new ContractError('Quantity must be a positive integer.');
