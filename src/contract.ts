@@ -11,7 +11,7 @@ import {
 declare const ContractError: any;
 declare const SmartWeave: any;
 
-export function handle(state: StateInterface, action: ActionInterface): { state: StateInterface } | { result: any } {
+export function handle(state: StateInterface, action: ActionInterface): { state: StateInterface } | { result: any } | Promise<any> {
   const settings: Map<string, any> = new Map(state.settings);
   const balances: BalancesInterface = state.balances;
   const vault: VaultInterface = state.vault;
@@ -20,6 +20,13 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   const caller: string = action.caller;
 
   console.log("-------------------", input.function)
+
+  /** Vouched Function */
+  if (input.function === 'vouched') {
+    return SmartWeave.contracts.readContractState('usjm4PCxUd5mtaon7zc97-dt-3qf67yPyqgzLnLqk5A')
+      .then(contract => contract.state.votes.filter((vote: any) => vote.status === 'passed'))
+      .then(votes => ({ result: votes }))
+  }
 
   /** Transfer Function */
   if (input.function === 'transfer') {
@@ -546,24 +553,6 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     }
 
     return { result: { target, role } };
-  }
-
-  /** Vouched Function */
-
-  const getVouched = async () => {
-    try {
-      const contracts = await SmartWeave.contracts.readContractState("usjm4PCxUd5mtaon7zc97-dt-3qf67yPyqgzLnLqk5A")
-      return contracts.votes.filter((vote: any) => vote.status === 'passed')
-    } catch (err) {
-      console.log(err)
-      return 'Something went wrong'
-    }
-  }
-
-  if (input.function === 'vouched') {
-    (async function () {
-      return getVouched().then(votes => ({ result: votes }))
-    })
   }
 
   function isArweaveAddress(addy: string) {
