@@ -62,5 +62,5 @@ export interface ResultInterface {
 
 export type VoteStatus = 'active' | 'quorumFailed' | 'passed' | 'failed';
 export type VoteType = 'mint' | 'mintLocked' | 'burnVault' | 'indicative' | 'set';
-export type GetFunctionType = 'balance' | 'unlockedBalance' | 'vaultBalance' | 'role';
-export type SetFunctionType = 'transfer' | 'transferLocked' | 'vote' | 'propose' | 'finalize' | 'lock' | 'increaseVault' | 'unlock' | 'extend';
+export type GetFunctionType = 'balance' | 'unlockedBalance' | 'vaultBalance' | 'role' | 'vouched';
+export type SetFunctionType = 'transfer' | 'transferLocked' | 'vote' | 'propose' | 'finalize' | 'lock' | 'increaseVault' | 'unlock' | 'extend' | 'vouched';
