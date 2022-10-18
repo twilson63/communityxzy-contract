@@ -9,6 +9,7 @@ import {
 } from "./faces";
 
 declare const ContractError: any;
+declare const ContractAssert: any;
 declare const SmartWeave: any;
 
 export function handle(state: StateInterface, action: ActionInterface): { state: StateInterface } | { result: any } {
@@ -27,14 +28,19 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
     const vouchServices = state.votes
       .filter(v => v.status === 'passed')
-      .reduce((a, { value }) => ({ ...a, [value]: true }), {})
+      .reduce((a, { value }) => {
+        a[value] = true;
+        return a
+      }, {})
+
     if (vouchServices[caller]) {
       state.vouched[input.address] = {
         service: caller,
         transaction: input.transaction
       }
+    } else {
+      throw new ContractError('Calling Service is not active!')
     }
-    ContractError('Calling Service is not active!')
     return { state }
   }
   /** Transfer Function */
