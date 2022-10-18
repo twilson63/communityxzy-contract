@@ -6,6 +6,7 @@ export interface StateInterface {
   votes: VoteInterface[];
   roles: RoleInterface;
   settings: [string, any][];
+  vouched: VouchedInterface;
 }
 
 export interface RoleInterface {
@@ -26,6 +27,15 @@ export interface VaultParamsInterface {
   end: number;
 }
 
+export interface VouchedInterface {
+  [key: string]: VouchedParamsInterface;
+}
+
+export interface VouchedParamsInterface {
+  service: string;
+  transaction: string;
+}
+
 export interface ActionInterface {
   input: InputInterface;
   caller: string;
@@ -34,6 +44,8 @@ export interface ActionInterface {
 export interface InputInterface extends VoteInterface {
   function: GetFunctionType | SetFunctionType;
   cast?: string;
+  address?: string;
+  transaction?: string;
 }
 
 export interface VoteInterface {

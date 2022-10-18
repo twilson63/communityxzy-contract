@@ -33,7 +33,14 @@ The community state has the following default structure:
       ["voteLength", number], // How many blocks to leave a proposal open
       ["lockMinLength", number], // Minimum lockLength allowed
       ["lockMaxLength", number] // Maximum lockLength allowed
-  ]
+  ],
+  vouched: {
+    // key is vouched users wallet identifier
+    [key: string]: [{
+      service: string, // service wallet address
+      transaction: string // vouch-for transaction id
+    }]
+  }
 }
 ```
 
@@ -53,7 +60,13 @@ Here's an example of what the state when creating the contract should look like:
       ["voteLength", 2000],
       ["lockMinLength", 100],
       ["lockMaxLength", 10000]
-  ]
+  ],
+  "vouched": {
+    "vh-NTHVvlKZqRxc8LyyTNok65yQ55a_PJ1zWLb9G2JI": {
+      "service": "BPr7vrFduuQqqVMu_tftxsScTKUq9ke0rx4q5C9ieQU",
+      "transaction": "tNuHFojPxI1AgRqTwesowUNzmay_gUmf-E4i1K1tLAY"
+    }
+  }
 }
 ```
 
@@ -226,4 +239,14 @@ After a vote is concluded, we should call finalize to make it in effect. It will
 - **id**: Proposal ID.
 
 #### Returns:
+`{ state }`
+
+### addVouchedUser
+Registers a vouched user in the vouched object, so that contracts can safely validate vouched uses against the VouchDAO contract.
+
+#### Requires:
+- **address**: Vouched User
+- **transaction**: Vouch-For Transaction
+
+#### Returns
 `{ state }`
