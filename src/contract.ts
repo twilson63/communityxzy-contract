@@ -19,6 +19,24 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   const input: InputInterface = action.input;
   const caller: string = action.caller;
 
+  /** addVouchedUser Function  */
+  if (input.function === 'addVouchedUser') {
+    ContractAssert(input.address, 'Address is required')
+    ContractAssert(input.transaction, 'Vouch For transaction required')
+    isArweaveAddress(input.address)
+
+    const vouchServices = state.votes
+      .filter(v => v.status === 'passed')
+      .reduce((a, { value }) => ({ ...a, [value]: true }), {})
+    if (vouchServices[caller]) {
+      state.vouched[input.address] = {
+        service: caller,
+        transaction: input.transaction
+      }
+    }
+    ContractError('Calling Service is not active!')
+    return { state }
+  }
   /** Transfer Function */
   if (input.function === 'transfer') {
     const target = isArweaveAddress(input.target);
@@ -36,7 +54,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       throw new ContractError('Invalid token transfer.');
     }
 
-    if(!(caller in balances)) {
+    if (!(caller in balances)) {
       throw new ContractError('Caller doesn\'t own any DAO balance.');
     }
 
@@ -58,21 +76,21 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     return { state };
   }
 
-  if(input.function === 'transferLocked') {
+  if (input.function === 'transferLocked') {
     const target = isArweaveAddress(input.target);
     const qty = +input.qty;
     const lockLength = +input.lockLength;
 
-    if(!Number.isInteger(qty) || qty <= 0) {
+    if (!Number.isInteger(qty) || qty <= 0) {
       throw new ContractError('Quantity must be a positive integer.');
     }
 
-    if(!Number.isInteger(lockLength) || lockLength < settings.get('lockMinLength') || lockLength > settings.get('lockMaxLength')) {
+    if (!Number.isInteger(lockLength) || lockLength < settings.get('lockMinLength') || lockLength > settings.get('lockMaxLength')) {
       throw new ContractError(`lockLength is out of range. lockLength must be between ${settings.get('lockMinLength')} - ${settings.get('lockMaxLength')}.`);
     }
 
     const balance = balances[caller];
-    if(isNaN(balance) || balance < qty) {
+    if (isNaN(balance) || balance < qty) {
       throw new ContractError('Not enough balance.');
     }
 
@@ -111,20 +129,20 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     if (target in balances) {
       balance = balances[target];
     }
-    if(target in vault && vault[target].length) {
+    if (target in vault && vault[target].length) {
       try {
         balance += vault[target].map(a => a.balance).reduce((a, b) => a + b, 0);
-      } catch(e) {}
+      } catch (e) { }
     }
 
     return { result: { target, balance } };
   }
 
   /** Total balance function */
-  if(input.function === 'unlockedBalance') {
+  if (input.function === 'unlockedBalance') {
     const target = isArweaveAddress(input.target || caller);
 
-    if(typeof target !== 'string') {
+    if (typeof target !== 'string') {
       throw new ContractError('Must specificy target to get balance for.');
     }
 
@@ -140,20 +158,20 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   /** Lock System **/
 
   /** Lock Function */
-  if(input.function === 'lock') {
+  if (input.function === 'lock') {
     const qty = input.qty;
     const lockLength = input.lockLength;
 
-    if(!Number.isInteger(qty) || qty <= 0) {
+    if (!Number.isInteger(qty) || qty <= 0) {
       throw new ContractError('Quantity must be a positive integer.');
     }
 
-    if(!Number.isInteger(lockLength) || lockLength < settings.get('lockMinLength') || lockLength > settings.get('lockMaxLength')) {
+    if (!Number.isInteger(lockLength) || lockLength < settings.get('lockMinLength') || lockLength > settings.get('lockMaxLength')) {
       throw new ContractError(`lockLength is out of range. lockLength must be between ${settings.get('lockMinLength')} - ${settings.get('lockMaxLength')}.`);
     }
 
     const balance = balances[caller];
-    if(isNaN(balance) || balance < qty) {
+    if (isNaN(balance) || balance < qty) {
       throw new ContractError('Not enough balance.');
     }
 
@@ -180,22 +198,22 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     return { state };
   }
 
-  if(input.function === 'increaseVault') {
+  if (input.function === 'increaseVault') {
     const lockLength = input.lockLength;
     const id = input.id;
-    if(!Number.isInteger(lockLength) || lockLength < settings.get('lockMinLength') || lockLength > settings.get('lockMaxLength')) {
+    if (!Number.isInteger(lockLength) || lockLength < settings.get('lockMinLength') || lockLength > settings.get('lockMaxLength')) {
       throw new ContractError(`lockLength is out of range. lockLength must be between ${settings.get('lockMinLength')} - ${settings.get('lockMaxLength')}.`);
     }
 
-    if(caller in vault) {
-      if(!vault[caller][id]) {
+    if (caller in vault) {
+      if (!vault[caller][id]) {
         throw new ContractError('Invalid vault ID.');
       }
     } else {
       throw new ContractError('Caller does not have a vault.');
     }
 
-    if(+SmartWeave.block.height >= vault[caller][id].end) {
+    if (+SmartWeave.block.height >= vault[caller][id].end) {
       throw new ContractError('This vault has ended.');
     }
 
@@ -205,15 +223,15 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   }
 
   /** Unlock Function */
-  if(input.function === 'unlock') {
+  if (input.function === 'unlock') {
     // After the time has passed for locked tokens, unlock them calling this function.
-    if(caller in vault && vault[caller].length) {
+    if (caller in vault && vault[caller].length) {
       let i = vault[caller].length;
-      while(i--) {
+      while (i--) {
         const locked = vault[caller][i];
-        if(+SmartWeave.block.height >= locked.end) {
+        if (+SmartWeave.block.height >= locked.end) {
           // Unlock
-          if(caller in balances && typeof balances[caller] === 'number') {
+          if (caller in balances && typeof balances[caller] === 'number') {
             balances[caller] += locked.balance;
           } else {
             balances[caller] = locked.balance;
@@ -228,20 +246,20 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   }
 
   /** VaultBalance Function */
-  if(input.function === 'vaultBalance') {
+  if (input.function === 'vaultBalance') {
     const target = isArweaveAddress(input.target || caller);
     let balance = 0;
 
-    if(target in vault) {
+    if (target in vault) {
       const blockHeight = +SmartWeave.block.height;
       const filtered = vault[target].filter(a => blockHeight < a.end);
 
-      for(let i = 0, j = filtered.length; i < j; i++) {
+      for (let i = 0, j = filtered.length; i < j; i++) {
         balance += filtered[i].balance;
       }
     }
 
-    return { result: { target, balance} };
+    return { result: { target, balance } };
   }
 
   /** Propose Function */
@@ -249,24 +267,24 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     const voteType = input.type;
 
     const note = input.note;
-    if(typeof note !== 'string') {
+    if (typeof note !== 'string') {
       throw new ContractError('Note format not recognized.');
     }
 
-    if(!(caller in vault)) {
+    if (!(caller in vault)) {
       throw new ContractError('Caller needs to have locked balances.');
     }
 
     const hasBalance = (vault[caller] && !!vault[caller].filter(a => a.balance > 0).length);
-    if(!hasBalance) {
+    if (!hasBalance) {
       throw new ContractError('Caller doesn\'t have any locked balance.');
     }
 
     let totalWeight = 0;
     const vaultValues = Object.values(vault);
-    for(let i = 0, j = vaultValues.length; i < j; i++) {
+    for (let i = 0, j = vaultValues.length; i < j; i++) {
       const locked = vaultValues[i];
-      for(let j = 0, k = locked.length; j < k; j++) {
+      for (let j = 0, k = locked.length; j < k; j++) {
         totalWeight += locked[j].balance * (locked[j].end - locked[j].start);
       }
     }
@@ -312,8 +330,8 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       }
 
       let lockLength = {};
-      if(input.lockLength) {
-        if(!Number.isInteger(input.lockLength) || input.lockLength < settings.get('lockMinLength') || input.lockLength > settings.get('lockMaxLength')) {
+      if (input.lockLength) {
+        if (!Number.isInteger(input.lockLength) || input.lockLength < settings.get('lockMinLength') || input.lockLength > settings.get('lockMaxLength')) {
           throw new ContractError(`lockLength is out of range. lockLength must be between ${settings.get('lockMinLength')} - ${settings.get('lockMaxLength')}.`);
         }
 
@@ -326,10 +344,10 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       }, lockLength);
 
       votes.push(vote);
-    } else if(voteType === 'burnVault') {
+    } else if (voteType === 'burnVault') {
       const target: string = isArweaveAddress(input.target);
 
-      if(!target || typeof target !== 'string') {
+      if (!target || typeof target !== 'string') {
         throw new ContractError('Target is required.');
       }
 
@@ -344,29 +362,29 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       }
 
       // Validators
-      if(input.key === 'quorum' || input.key === 'support' || input.key === 'lockMinLength' || input.key === 'lockMaxLength') {
+      if (input.key === 'quorum' || input.key === 'support' || input.key === 'lockMinLength' || input.key === 'lockMaxLength') {
         input.value = +input.value;
       }
 
-      if(input.key === 'quorum') {
-        if(isNaN(input.value) || input.value < 0.01 || input.value > 0.99) {
+      if (input.key === 'quorum') {
+        if (isNaN(input.value) || input.value < 0.01 || input.value > 0.99) {
           throw new ContractError('Quorum must be between 0.01 and 0.99.');
         }
-      } else if(input.key === 'support') {
-        if(isNaN(input.value) || input.value < 0.01 || input.value > 0.99) {
+      } else if (input.key === 'support') {
+        if (isNaN(input.value) || input.value < 0.01 || input.value > 0.99) {
           throw new ContractError('Support must be between 0.01 and 0.99.');
         }
-      } else if(input.key === 'lockMinLength') {
-        if(!(Number.isInteger(input.value)) || input.value < 1 || input.value >= settings.get('lockMaxLength')) {
+      } else if (input.key === 'lockMinLength') {
+        if (!(Number.isInteger(input.value)) || input.value < 1 || input.value >= settings.get('lockMaxLength')) {
           throw new ContractError('lockMinLength cannot be less than 1 and cannot be equal or greater than lockMaxLength.');
         }
-      } else if(input.key === 'lockMaxLength') {
-        if(!(Number.isInteger(input.value)) || input.value <= settings.get('lockMinLength')) {
+      } else if (input.key === 'lockMaxLength') {
+        if (!(Number.isInteger(input.value)) || input.value <= settings.get('lockMinLength')) {
           throw new ContractError('lockMaxLength cannot be less than or equal to lockMinLength.');
         }
       }
 
-      if(input.key === 'role') {
+      if (input.key === 'role') {
         const recipient = isArweaveAddress(input.recipient);
 
         if (!recipient) {
@@ -407,11 +425,11 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     const vote = votes[id];
 
     let voterBalance = 0;
-    if(caller in vault) {
-      for(let i = 0, j = vault[caller].length; i < j; i++) {
+    if (caller in vault) {
+      for (let i = 0, j = vault[caller].length; i < j; i++) {
         const locked = vault[caller][i];
 
-        if((locked.start < vote.start) && locked.end >= vote.start) {
+        if ((locked.start < vote.start) && locked.end >= vote.start) {
           voterBalance += locked.balance * (locked.end - locked.start);
         }
       }
@@ -446,7 +464,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     const vote: VoteInterface = votes[id];
     const qty: number = vote.qty;
 
-    if(!vote) {
+    if (!vote) {
       throw new ContractError('This vote doesn\'t exists.');
     }
 
@@ -459,7 +477,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
     }
 
     // Check this total supply and quorum.
-    if((vote.totalWeight * settings.get('quorum')) > (vote.yays + vote.nays)) {
+    if ((vote.totalWeight * settings.get('quorum')) > (vote.yays + vote.nays)) {
       vote.status = 'quorumFailed';
       return { state };
     }
@@ -495,7 +513,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
           balances[vote.recipient] = qty;
         }
 
-      } else if(vote.type === 'mintLocked') {
+      } else if (vote.type === 'mintLocked') {
         const start = +SmartWeave.block.height;
         const end = start + vote.lockLength;
 
@@ -505,21 +523,21 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
           end
         };
 
-        if(vote.recipient in vault) {
+        if (vote.recipient in vault) {
           // Existing account
           vault[vote.recipient].push(locked);
         } else {
           // New locked account
           vault[vote.recipient] = [locked];
         }
-      } else if(vote.type === 'burnVault') {
-        if(vote.target in vault) {
+      } else if (vote.type === 'burnVault') {
+        if (vote.target in vault) {
           delete vault[vote.target];
         } else {
           vote.status = 'failed';
         }
       } else if (vote.type === 'set') {
-        if(vote.key === 'role') {
+        if (vote.key === 'role') {
           state.roles[vote.recipient] = vote.value;
         } else {
           settings.set(vote.key, vote.value);
@@ -535,11 +553,11 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   }
 
   /** Roles function */
-  if(input.function === 'role') {
+  if (input.function === 'role') {
     const target = isArweaveAddress(input.target || caller);
-    const role = (target in state.roles)? state.roles[target] : '';
+    const role = (target in state.roles) ? state.roles[target] : '';
 
-    if(!role.trim().length) {
+    if (!role.trim().length) {
       throw new ContractError('Target doesn\'t have a role specified.');
     }
 
@@ -548,7 +566,7 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
 
   function isArweaveAddress(addy: string) {
     const address = addy.toString().trim();
-    if(!/[a-z0-9_-]{43}/i.test(address)) {
+    if (!/[a-z0-9_-]{43}/i.test(address)) {
       throw new ContractError('Invalid Arweave address.');
     }
 
