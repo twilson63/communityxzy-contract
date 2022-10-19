@@ -43,7 +43,10 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       }, {})
 
     if (vouchServices[caller]) {
-      state.vouched[input.address] = {
+      if (!state['vouched']) {
+        state['vouched'] = {}
+      }
+      state['vouched'][input.address] = {
         service: caller,
         transaction: input.transaction
       }
