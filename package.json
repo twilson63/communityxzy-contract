@@ -12,7 +12,8 @@
     "build-ts": "node build.js",
     "clean": "rimraf ./dist",
     "cp": "copyfiles -u 1 ./src/**/*.json dist",
-    "test": "jest"
+    "test": "jest",
+    "deploy": "npm run build && node deploy.js"
   },
   "jest": {
     "preset": "ts-jest",
@@ -20,7 +21,8 @@
   },
   "dependencies": {
     "arweave": "^1.10.14",
-    "promises-tho": "^1.1.0"
+    "promises-tho": "^1.1.0",
+    "warp-contracts": "^1.2.13"
   },
   "devDependencies": {
     "@types/jest": "^26.0.15",
