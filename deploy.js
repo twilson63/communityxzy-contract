@@ -1,6 +1,8 @@
 const { WarpFactory, LoggerFactory, defaultCacheOptions } = require('warp-contracts')
 const fs = require('fs')
 const Arweave = require('arweave')
+// old vouch contract here
+const VOUCH = 'ZGaL5DOMIYRw9YHZ_NZ2JoIjST1QwhiD6T1jePH381I'
 
 const wallet = JSON.parse(fs.readFileSync('./wallet.json', 'utf-8'))
 
