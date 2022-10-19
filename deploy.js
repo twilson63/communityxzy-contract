@@ -10,11 +10,11 @@ const warp = WarpFactory.custom(arweave, {
   ...defaultCacheOptions,
   inMemory: true
 }, 'mainnet')
-  .useArweaveGateway()
+  .useArweaveGateway() // use arweave gateway 
   .build()
 
 async function main() {
-  const initState = warp.contract(VOUCH).readState().then(res => res.cacheValue.state)
+  const initState = warp.contract(VOUCH).readState().then(res => res.cachedValue.state)
   console.log(initState)
   // TODO: Change old Wallet Address with new Wallet Address
   const src = fs.readFileSync('./dist/contract.js', 'utf-8')
