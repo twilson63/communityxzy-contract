@@ -14,7 +14,10 @@
     ]
   },
   "votes": [],
-  "roles": {},
+  "roles": {
+    "uhE-QeYS8i4pmUtnxQyHD7dzXFNaJ9oMK-IM-QPNY6M": "admin"
+  },
+  "evolve": "",
   "settings": [
     [
       "quorum",

@@ -1,4 +1,5 @@
 require("typescript.api").register();
+const crypto = require('crypto')
 import Arweave from 'arweave/node';
 import * as fs from 'fs';
 import { StateInterface } from '../faces';
@@ -20,6 +21,21 @@ const addresses = {
   user: 'VAg65x9jNSfO9KQHdd3tfx1vQa8qyCyJ_uj7QcxNLDk',
   nonuser: 'DiFv0MDBxKEFkJEy_KNgJXNG6mxxSTcxgV0h4gzAgsc'
 };
+
+describe('evolve contract', () => {
+  const func = 'evolve';
+  const newContractSrc = crypto.randomUUID()
+  it('should evolve source', () => {
+    handler(state, {
+      input: {
+        function: func,
+        value: newContractSrc
+      },
+      caller: addresses['admin']
+    })
+    expect(state.evolve).toEqual(newContractSrc)
+  })
+})
 
 describe('addVouchedUser', () => {
   const func = 'addVouchedUser'

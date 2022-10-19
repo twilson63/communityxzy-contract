@@ -20,6 +20,15 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   const input: InputInterface = action.input;
   const caller: string = action.caller;
 
+  /** evolve Function  */
+  if (input.function === 'evolve') {
+    if (state.roles[caller] !== "admin") {
+      throw new ContractError("Caller cannot evolve the contract");
+    }
+    const newState = Object.assign(state, { evolve: input.value });
+    return { state: newState };
+  }
+
   /** addVouchedUser Function  */
   if (input.function === 'addVouchedUser') {
     ContractAssert(input.address, 'Address is required')
