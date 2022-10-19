@@ -2,7 +2,7 @@ const { WarpFactory, LoggerFactory, defaultCacheOptions } = require('warp-contra
 const fs = require('fs')
 const Arweave = require('arweave')
 // old vouch contract here
-const VOUCH = 'ZGaL5DOMIYRw9YHZ_NZ2JoIjST1QwhiD6T1jePH381I'
+const VOUCH = 'HW1vt0VSxPMxqQIaPGGqCsOBSTPflPFKhNiRTb2b1SE'
 
 const wallet = JSON.parse(fs.readFileSync('./wallet.json', 'utf-8'))
 
@@ -16,9 +16,12 @@ const warp = WarpFactory.custom(arweave, {
   .build()
 
 async function main() {
-  const initState = warp.contract(VOUCH).readState().then(res => res.cachedValue.state)
+  let initState = await warp.contract(VOUCH).readState().then(res => res.cachedValue.state)
+
+  initState = Object.assign({}, initState, { roles: { 'NlNd_PcajvxAkOweo7rZHJKiIJ7vW1WXt9vb6CzGmC0': 'admin' }, vouched: {} })
+
   console.log(initState)
-  // TODO: Change old Wallet Address with new Wallet Address
+
   const src = fs.readFileSync('./dist/contract.js', 'utf-8')
 
   const result = await warp.createContract.deploy({
