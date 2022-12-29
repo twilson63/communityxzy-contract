@@ -20,6 +20,16 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
   const input: InputInterface = action.input;
   const caller: string = action.caller;
 
+  if (input.function === 'patch') {
+    if (!state.patch) {
+      Object.keys(state.vouched).forEach(k => {
+        state.vouched[k] = [].concat(state.vouched[k])
+      })
+      state.patch = '1'
+    }
+    return { state }
+  }
+
   /** addVouchedUser Function  */
   if (input.function === 'addVouchedUser') {
     ContractAssert(input.address, 'Address is required')
@@ -34,9 +44,12 @@ export function handle(state: StateInterface, action: ActionInterface): { state:
       }, {})
 
     if (vouchServices[caller]) {
-      state.vouched[input.address] = {
-        service: caller,
-        transaction: input.transaction
+      if (!state.vouched[input.address]) {
+        state.vouched[input.address] = []
+      }
+      if (!state.vouched[input.address].find(o => o.service === caller)) {
+        state.vouched[input.address] = state.vouched[input.address]
+          .concat({ service: caller, transaction: input.transaction })
       }
     } else {
       throw new ContractError('Calling Service is not active!')

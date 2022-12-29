@@ -51,7 +51,7 @@ describe('addVouchedUser', () => {
       }, caller: 'Ax_uXyLQBPZSQ15movzv9-O1mDo30khslqN64qD27Z8'
     });
 
-    expect(state.vouched[addresses.user]).toEqual({ "service": "Ax_uXyLQBPZSQ15movzv9-O1mDo30khslqN64qD27Z8", "transaction": "tNuHFojPxI1AgRqTwesowUNzmay_gUmf-E4i1K1tLAY" });
+    expect(state.vouched[addresses.user][0]).toEqual({ "service": "Ax_uXyLQBPZSQ15movzv9-O1mDo30khslqN64qD27Z8", "transaction": "tNuHFojPxI1AgRqTwesowUNzmay_gUmf-E4i1K1tLAY" });
 
   })
 
