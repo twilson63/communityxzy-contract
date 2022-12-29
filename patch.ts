@@ -20,9 +20,9 @@ async function main() {
   //const result = await warp.saveSourceTx(tx,  true)
 
   // 1. Evolve contract
-  const result = await warp.contract(TEST_VOUCH)
-    .connect(wallet)
-    .evolve(SRC_TX, { disableBundling: true })
+  // const result = await warp.contract(TEST_VOUCH)
+  //   .connect(wallet)
+  //   .evolve(SRC_TX, { disableBundling: true })
 
   // 2. Run Patch
   // const result = await warp.contract(TEST_VOUCH)
