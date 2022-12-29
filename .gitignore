@@ -3,3 +3,4 @@ dist
 __tests__/*.json
 /coverage
 .DS_Store
+wallet.json
