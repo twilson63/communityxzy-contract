@@ -14,7 +14,7 @@ async function main() {
   const vouchState = await fetch('https://cache.permapages.app/_z0ch80z_daDUFqC9jHjfOL8nekJcok4ZRkE_UesYsk').then(res => res.json())
   const initState = {
     name: 'TestVouchDAOPatch',
-    ticker: 'TEST_VOUCH_DAO',
+    ticker: 'TEST_VOUCH_DAO_2',
     balances: {
       'vh-NTHVvlKZqRxc8LyyTNok65yQ55a_PJ1zWLb9G2JI': 0
     },
@@ -45,15 +45,22 @@ async function main() {
         yays: 7200000000
       }
     ],
-    vouched: vouchState.vouched
+    // convert to arrays
+    vouched: Object.keys(vouchState.vouched).reduce((a, k) => {
+      a[k] = [vouchState.vouched[k]]
+      return a
+    }, {}),
+    canEvolve: true
   }
-
+  //console.log(JSON.stringify(initState, null, 2))
+  /*
   const result = await warp.createContract.deployFromSourceTx({
     wallet,
     initState: JSON.stringify(initState),
     srcTxId: 'ovWCp0xKuHtq-bADXbtiNr6umwb_AE73kVZWtfHlX3w'
   })
   console.log(result)
+  */
 }
 
 main()
